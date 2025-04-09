@@ -10,9 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // home: MapScreen(),
-      // home: HomePage(),
-      home:FirstScreen(),
+      home: HomePage(),
     );
   }
 }
@@ -49,10 +47,10 @@ class HomePage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Add your button action here
-                Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => MapScreen()),
-              ); 
+                showDialog(
+                  context: context,
+                  builder: (context) => const FirstPageDialog(),
+               );
               },
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
@@ -71,92 +69,200 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-class FirstScreen extends StatelessWidget {
-  // Method to show input dialog and handle navigation
-  Future<void> _showInputDialogAndNavigate(BuildContext context) async {
-    TextEditingController _controller = TextEditingController();
 
+class FirstPageDialog extends StatefulWidget {
+  const FirstPageDialog({super.key});
 
-    String? result = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Enter Your Name'),
-          content: TextField(
-            controller: _controller,
-            decoration: InputDecoration(hintText: 'Type your name'),
-          ), 
-          actions: [
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog without value
-              },
+  @override
+  State<FirstPageDialog> createState() => _FirstPageDialogState();
+}
+
+class _FirstPageDialogState extends State<FirstPageDialog> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _numberController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _numberController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Prompt'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Please enter your name:',
+              style: TextStyle(fontSize: 20),
             ),
-            TextButton(
-              child: Text('next'),
-              onPressed: () {
-                Navigator.of(context).pop(_controller.text); // Return entered text
-              },
+            const SizedBox(height: 20),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Name',
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'How many text fields do you want on the next page?',
+              style: TextStyle(fontSize: 20),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _numberController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Number of Text Fields',
+              ),
             ),
           ],
-        );
-      },
-    );
-
-    // If user entered something and pressed Go, navigate to SecondScreen
-    if (result != null && result.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute( 
-          // builder: (context) => MapScreen(data: result),
-          builder: (context) => MapScreen(),
         ),
-      );
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(); // Close the dialog
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_nameController.text.isEmpty ||
+                _numberController.text.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Please enter both your name and a number')),
+              );
+              return;
+            }
+
+            int? numberOfFields = int.tryParse(_numberController.text);
+            if (numberOfFields == null || numberOfFields <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Please enter a valid positive number')),
+              );
+              return;
+            }
+
+            // Close the dialog
+            Navigator.of(context).pop();
+
+            // Navigate to the second page and pass the name and number
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SecondPage(
+                  name: _nameController.text,
+                  numberOfFields: numberOfFields,
+                ),
+              ),
+            );
+          },
+          child: const Text('Next'),
+        ),
+      ],
+    );
+  }
+}
+
+// Second Page: Dynamically generate the number of text fields
+class SecondPage extends StatefulWidget {
+  final String name;
+  final int numberOfFields;
+
+  const SecondPage({super.key, required this.name, required this.numberOfFields});
+
+  @override
+  State<SecondPage> createState() => _SecondPageState();
+}
+
+class _SecondPageState extends State<SecondPage> {
+  late List<TextEditingController> _controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize a list of controllers based on the number of fields
+    _controllers = List.generate(
+      widget.numberOfFields,
+      (index) => TextEditingController(),
+    );
+  }
+
+  @override
+  void dispose() {
+    // Dispose of all controllers
+    for (var controller in _controllers) {
+      controller.dispose();
     }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Page'),
-        centerTitle: true,
+        title: const Text('Prompt Page'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Welcome to schedule recommender!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Hello, ${widget.name}!',
+                style: const TextStyle(fontSize: 20),
               ),
-            ),
-            SizedBox(height: 20),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Tell us your destinations and availability',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
+              const SizedBox(height: 20),
+              const Text(
+                'Please fill in the fields below:',
+                style: TextStyle(fontSize: 20),
               ),
-            ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () => _showInputDialogAndNavigate(context),
-              child: Text('trial'),
-            ),
-          ],
+              const SizedBox(height: 20),
+              // Dynamically generate text fields
+              ...List.generate(widget.numberOfFields, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: TextField(
+                    controller: _controllers[index],
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: 'Field ${index + 1}',
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // Check if any field is empty
+                  bool allFieldsFilled = _controllers.every((controller) => controller.text.isNotEmpty);
+                  if (!allFieldsFilled) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please fill in all fields')),
+                    );
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MapScreen()),
+                  ); 
+                },
+                child: const Text('Submit'),
+              ),
+            ],
+          ),
         ),
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     // Add your FAB action here
-      //   },
-      //   child: Icon(Icons.add),
-      // ),
     );
   }
 }
