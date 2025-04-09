@@ -1,75 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:geocoding/geocoding.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: HomePage(),
+      title: 'Two-Page Prompt with OSM Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const HomePage(),
     );
   }
 }
 
+// Home Page: Contains a button to trigger the pop-up dialog
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Page'),
-        centerTitle: true,
+        title: const Text('Home Page'),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Welcome to schedule recommender!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Do you want to kill some time today?',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                // Add your button action here
-                showDialog(
-                  context: context,
-                  builder: (context) => const FirstPageDialog(),
-               );
-              },
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              ),
-              child: Text('Trial'),
-            ),
-          ],
+        child: ElevatedButton(
+          onPressed: () {
+            // Show the pop-up dialog when the button is pressed
+            showDialog(
+              context: context,
+              builder: (context) => const FirstPageDialog(),
+            );
+          },
+          child: const Text('Start Prompt'),
         ),
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     // Add your FAB action here
-      //   },
-      //   child: Icon(Icons.add),
-      // ),
     );
   }
 }
 
+// First Page Dialog: Pop-up dialog to prompt for the user's name and a number
 class FirstPageDialog extends StatefulWidget {
   const FirstPageDialog({super.key});
 
@@ -110,7 +88,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
             ),
             const SizedBox(height: 20),
             const Text(
-              'How many text fields do you want on the next page?',
+              'How many destinations do you want to enter?',
               style: TextStyle(fontSize: 20),
             ),
             const SizedBox(height: 20),
@@ -119,7 +97,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Number of Text Fields',
+                labelText: 'Number of Destinations',
               ),
             ),
           ],
@@ -173,7 +151,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
   }
 }
 
-// Second Page: Dynamically generate the number of text fields
+// Second Page: Dynamically generate text fields for destinations
 class SecondPage extends StatefulWidget {
   final String name;
   final int numberOfFields;
@@ -210,7 +188,7 @@ class _SecondPageState extends State<SecondPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prompt Page'),
+        title: const Text('Enter Destinations'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -224,11 +202,11 @@ class _SecondPageState extends State<SecondPage> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Please fill in the fields below:',
+                'Please enter your destinations:',
                 style: TextStyle(fontSize: 20),
               ),
               const SizedBox(height: 20),
-              // Dynamically generate text fields
+              // Dynamically generate text fields for destinations
               ...List.generate(widget.numberOfFields, (index) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
@@ -236,7 +214,7 @@ class _SecondPageState extends State<SecondPage> {
                     controller: _controllers[index],
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
-                      labelText: 'Field ${index + 1}',
+                      labelText: 'Destination ${index + 1}',
                     ),
                   ),
                 );
@@ -248,16 +226,26 @@ class _SecondPageState extends State<SecondPage> {
                   bool allFieldsFilled = _controllers.every((controller) => controller.text.isNotEmpty);
                   if (!allFieldsFilled) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please fill in all fields')),
+                      const SnackBar(content: Text('Please fill in all destinations')),
                     );
                     return;
                   }
+
+                  // Collect all the destination values
+                  List<String> destinations = _controllers.map((controller) => controller.text).toList();
+
+                  // Navigate to the map page with the destinations
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => MapScreen()),
-                  ); 
+                    MaterialPageRoute(
+                      builder: (context) => MapPage(
+                        name: widget.name,
+                        destinations: destinations,
+                      ),
+                    ),
+                  );
                 },
-                child: const Text('Submit'),
+                child: const Text('Show on Map'),
               ),
             ],
           ),
@@ -267,25 +255,124 @@ class _SecondPageState extends State<SecondPage> {
   }
 }
 
+// Map Page: Display OSM map with pins based on destinations
+class MapPage extends StatefulWidget {
+  final String name;
+  final List<String> destinations;
 
-class MapScreen extends StatelessWidget {
+  const MapPage({super.key, required this.name, required this.destinations});
+
+  @override
+  State<MapPage> createState() => _MapPageState();
+}
+
+class _MapPageState extends State<MapPage> {
+  late MapController _mapController;
+  List<GeoPoint> _markerPoints = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the MapController with a default position (London)
+    _mapController = MapController(
+      initPosition: GeoPoint(latitude: 51.5074, longitude: -0.1278),
+    );
+    _geocodeDestinations();
+  }
+
+  Future<void> _geocodeDestinations() async {
+    print('Starting geocoding for destinations: ${widget.destinations}');
+    for (String destination in widget.destinations) {
+      try {
+        // Add a timeout to prevent hanging on failed geocoding requests
+        List<Location> locations = await locationFromAddress(destination).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception('Geocoding timed out for $destination');
+          },
+        );
+
+        if (locations.isNotEmpty) {
+          Location location = locations.first;
+          GeoPoint point = GeoPoint(
+            latitude: location.latitude,
+            longitude: location.longitude,
+          );
+          print('Geocoded $destination to $point');
+          _markerPoints.add(point);
+
+          // Add a marker to the map
+          await _mapController.addMarker(
+            point,
+            markerIcon: const MarkerIcon(
+              icon: Icon(
+                Icons.location_pin,
+                color: Colors.blue,
+                size: 48,
+              ),
+            ),
+          );
+          print('Marker added for $destination');
+        } else {
+          print('No locations found for $destination');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No location found for $destination')),
+          );
+        }
+      } catch (e) {
+        // Log the error and show a message, but continue processing other destinations
+        print('Error geocoding $destination: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not find location for $destination: $e')),
+        );
+      }
+    }
+
+    // Center the map on the first marker if available, otherwise keep the default position
+    if (_markerPoints.isNotEmpty) {
+      print('Centering map on first marker: ${_markerPoints.first}');
+      await _mapController.goToLocation(_markerPoints.first);
+      await _mapController.setZoom(zoomLevel: 10);
+    } else {
+      print('No valid destinations to display on the map');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No valid destinations to display on the map')),
+      );
+    }
+
+    // Ensure the loading state is updated even if geocoding fails
+    print('Geocoding complete, updating loading state');
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('OpenStreetMap in Flutter')),
-      body: FlutterMap(
-        options: MapOptions(
-          center: LatLng(22.2700000, 114.1750000), // Example: London coordinates
-          zoom: 14.0, // Initial zoom level
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.app', // Required for OSM usage policy
-          ),
-        ],
+      appBar: AppBar(
+        title: Text('${widget.name}\'s Destinations Map'),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : OSMFlutter(
+              controller: _mapController,
+              osmOption: const OSMOption(
+                zoomOption: ZoomOption(
+                  initZoom: 10,
+                  minZoomLevel: 3,
+                  maxZoomLevel: 19,
+                  stepZoom: 1.0,
+                ),
+              ),
+            ),
     );
-    
   }
 }
