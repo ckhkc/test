@@ -76,6 +76,7 @@ class FirstScreen extends StatelessWidget {
   Future<void> _showInputDialogAndNavigate(BuildContext context) async {
     TextEditingController _controller = TextEditingController();
 
+
     String? result = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -84,7 +85,7 @@ class FirstScreen extends StatelessWidget {
           content: TextField(
             controller: _controller,
             decoration: InputDecoration(hintText: 'Type your name'),
-          ),
+          ), 
           actions: [
             TextButton(
               child: Text('Cancel'),
@@ -93,7 +94,7 @@ class FirstScreen extends StatelessWidget {
               },
             ),
             TextButton(
-              child: Text('Go'),
+              child: Text('next'),
               onPressed: () {
                 Navigator.of(context).pop(_controller.text); // Return entered text
               },
@@ -107,7 +108,7 @@ class FirstScreen extends StatelessWidget {
     if (result != null && result.isNotEmpty) {
       Navigator.push(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute( 
           // builder: (context) => MapScreen(data: result),
           builder: (context) => MapScreen(),
         ),
