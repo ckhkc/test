@@ -1,6 +1,7 @@
 # test
 
-A new Flutter project.
+The map page is under testing.
+I did navigating the dialog prompt to the real osm map.
 
 ## Getting Started
 
