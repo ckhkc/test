@@ -274,20 +274,38 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('OpenStreetMap in Flutter')),
-      body: FlutterMap(
-        options: MapOptions(
-          center: LatLng(22.2700000, 114.1750000), // Example: London coordinates
-          zoom: 14.0, // Initial zoom level
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.app', // Required for OSM usage policy
-          ),
-        ],
-      ),
+      body: content(),
     );
-    
+  }
+
+  Widget content() {
+    return FlutterMap(
+      options: MapOptions(
+        center: LatLng(22.2700000, 114.1750000), // Example: London coordinates
+        zoom: 14.0, // Initial zoom level
+        interactionOptions: const InteractionOptions(flags: ~InteractiveFlag.doubleTapZoom)
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.app', // Required for OSM usage policy
+        ),
+        MarkerLayer(markers: [
+          Marker(
+            point: LatLng(22.2777, 114.1755),
+            width: 60,
+            height: 60,
+            alignment: Alignment.centerLeft,
+            child: Icon(
+              Icons.location_pin,
+              size: 60,
+              color: Colors.red,
+            )
+          )
+        ])
+
+      ],
+    );
   }
 }
 
