@@ -3,282 +3,9 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart' as fm;
-import 'package:latlong2/latlong.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:routing_client_dart/routing_client_dart.dart' as routing;
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Two-Page Prompt with OSM Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const HomePage(),
-    );
-  }
-}
-
-// Home Page: Contains a button to trigger the pop-up dialog
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Show the pop-up dialog when the button is pressed
-            showDialog(
-              context: context,
-              builder: (context) => const FirstPageDialog(),
-            );
-          },
-          child: const Text('Start Prompt'),
-        ),
-      ),
-    );
-  }
-}
-
-// First Page Dialog: Pop-up dialog to prompt for the user's name and a number
-class FirstPageDialog extends StatefulWidget {
-  const FirstPageDialog({super.key});
-
-  @override
-  State<FirstPageDialog> createState() => _FirstPageDialogState();
-}
-
-class _FirstPageDialogState extends State<FirstPageDialog> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _numberController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _numberController.dispose();
-    _timeController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Prompt'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Please enter your name:',
-              style: TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Name',
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'How many destinations do you want to enter?',
-              style: TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _numberController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Number of Destinations',
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'How much time do you have?',
-              style: TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _timeController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'In mintues',
-              ),
-            ),
-            
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop(); // Close the dialog
-          },
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_nameController.text.isEmpty ||
-                _numberController.text.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Please enter both your name and a number')),
-              );
-              return;
-            }
-
-            int? numberOfFields = int.tryParse(_numberController.text);
-            if (numberOfFields == null || numberOfFields <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Please enter a valid positive number')),
-              );
-              return;
-            }
-
-            // Close the dialog
-            Navigator.of(context).pop();
-
-            // Navigate to the second page and pass the name and number
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SecondPage(
-                  name: _nameController.text,
-                  numberOfFields: numberOfFields,
-                ),
-              ),
-            );
-          },
-          child: const Text('Next'),
-        ),
-      ],
-    );
-  }
-}
-
-// Second Page: Dynamically generate text fields for destinations
-class SecondPage extends StatefulWidget {
-  final String name;
-  final int numberOfFields;
-
-  const SecondPage({super.key, required this.name, required this.numberOfFields});
-
-  @override
-  State<SecondPage> createState() => _SecondPageState();
-}
-
-class _SecondPageState extends State<SecondPage> {
-  late List<TextEditingController> _controllers;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize a list of controllers based on the number of fields
-    _controllers = List.generate(
-      widget.numberOfFields,
-      (index) => TextEditingController(),
-    );
-  }
-
-  @override
-  void dispose() {
-    // Dispose of all controllers
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Enter Destinations'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Hello, ${widget.name}!',
-                style: const TextStyle(fontSize: 20),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Please enter your destinations:',
-                style: TextStyle(fontSize: 20),
-              ),
-              const SizedBox(height: 20),
-              // Dynamically generate text fields for destinations
-              ...List.generate(widget.numberOfFields, (index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: TextField(
-                    controller: _controllers[index],
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: 'Destination ${index + 1}',
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  // Check if any field is empty
-                  bool allFieldsFilled = _controllers.every((controller) => controller.text.isNotEmpty);
-                  if (!allFieldsFilled) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please fill in all destinations')),
-                    );
-                    return;
-                  }
-
-                  // Collect all the destination values
-                  List<String> destinations = _controllers.map((controller) => controller.text).toList();
-
-                  // Navigate to the map page with the destinations
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      // builder: (context) => MapPage(
-                      //   name: widget.name,
-                      //   destinations: destinations,
-                      // ),
-                      builder: (context) => OldMainExample()
-                    ),
-                  );
-                },
-                child: const Text('Show on Map'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class OldMainExample extends StatefulWidget {
   const OldMainExample({super.key});
@@ -289,7 +16,6 @@ class OldMainExample extends StatefulWidget {
 
 class _MainExampleState extends State<OldMainExample>
     with OSMMixinObserver, TickerProviderStateMixin {
-  final fm.MapController _mapController = fm.MapController();
   late MapController controller;
   late GlobalKey<ScaffoldState> scaffoldKey;
   Key mapGlobalkey = UniqueKey();
@@ -642,281 +368,265 @@ class _MainExampleState extends State<OldMainExample>
       ),
       body: Stack(
         children: [
-          // OSMFlutter(
-          //   controller: controller,
-          //   osmOption: OSMOption(
-          //     enableRotationByGesture: true,
-          //     zoomOption: const ZoomOption(
-          //       initZoom: 8,
-          //       minZoomLevel: 3,
-          //       maxZoomLevel: 19,
-          //       stepZoom: 1.0,
-          //     ),
-          //     userLocationMarker: UserLocationMaker(
-          //         personMarker: MarkerIcon(
-          //           // icon: Icon(
-          //           //   Icons.car_crash_sharp,
-          //           //   color: Colors.red,
-          //           //   size: 48,
-          //           // ),
-          //           // iconWidget: SizedBox.square(
-          //           //   dimension: 56,
-          //           //   child: Image.asset(
-          //           //     "asset/taxi.png",
-          //           //     scale: .3,
-          //           //   ),
-          //           // ),
-          //           iconWidget: SizedBox(
-          //             width: 32,
-          //             height: 64,
-          //             child: Image.asset(
-          //               "asset/directionIcon.png",
-          //               scale: .3,
-          //             ),
-          //           ),
-          //           // assetMarker: AssetMarker(
-          //           //   image: AssetImage(
-          //           //     "asset/taxi.png",
-          //           //   ),
-          //           //   scaleAssetImage: 0.3,
-          //           // ),
-          //         ),
-          //         directionArrowMarker: MarkerIcon(
-          //           // icon: Icon(
-          //           //   Icons.navigation_rounded,
-          //           //   size: 48,
-          //           // ),
-          //           iconWidget: SizedBox(
-          //             width: 32,
-          //             height: 64,
-          //             child: Image.asset(
-          //               "asset/directionIcon.png",
-          //               scale: .3,
-          //             ),
-          //           ),
-          //         )
-          //         // directionArrowMarker: MarkerIcon(
-          //         //   assetMarker: AssetMarker(
-          //         //     image: AssetImage(
-          //         //       "asset/taxi.png",
-          //         //     ),
-          //         //     scaleAssetImage: 0.25,
-          //         //   ),
-          //         // ),
-          //         ),
-          //     staticPoints: [
-          //       StaticPositionGeoPoint(
-          //         "line 1",
-          //         const MarkerIcon(
-          //           icon: Icon(
-          //             Icons.train,
-          //             color: Colors.green,
-          //             size: 32,
-          //           ),
-          //         ),
-          //         [
-          //           GeoPoint(
-          //             latitude: 47.4333594,
-          //             longitude: 8.4680184,
-          //           ),
-          //           GeoPoint(
-          //             latitude: 47.4317782,
-          //             longitude: 8.4716146,
-          //           ),
-          //         ],
-          //       ),
-          //       /*StaticPositionGeoPoint(
-          //             "line 2",
-          //             MarkerIcon(
-          //               icon: Icon(
-          //                 Icons.train,
-          //                 color: Colors.red,
-          //                 size: 48,
-          //               ),
-          //             ),
-          //             [
-          //               GeoPoint(latitude: 47.4433594, longitude: 8.4680184),
-          //               GeoPoint(latitude: 47.4517782, longitude: 8.4716146),
-          //             ],
-          //           )*/
-          //     ],
-          //     roadConfiguration: const RoadOption(
-          //       roadColor: Colors.blueAccent,
-          //     ),
-          //     showContributorBadgeForOSM: true,
-          //     //trackMyPosition: trackingNotifier.value,
-          //     showDefaultInfoWindow: false,
-          //   ),
-          //   mapIsLoading: const Center(
-          //     child: Column(
-          //       mainAxisSize: MainAxisSize.min,
-          //       mainAxisAlignment: MainAxisAlignment.center,
-          //       crossAxisAlignment: CrossAxisAlignment.center,
-          //       children: [
-          //         CircularProgressIndicator(),
-          //         Text("Map is Loading.."),
-          //       ],
-          //     ),
-          //   ),
-          //   onMapIsReady: (isReady) {
-          //     if (isReady) {
-          //       debugPrint("map is ready");
-          //     }
-          //   },
-          //   onLocationChanged: (myLocation) {
-          //     debugPrint('user location :$myLocation');
-          //   },
-          //   onGeoPointClicked: (geoPoint) async {
-          //     if (geoPoint ==
-          //         GeoPoint(
-          //           latitude: 47.442475,
-          //           longitude: 8.4680389,
-          //         )) {
-          //       final newGeoPoint = GeoPoint(
-          //         latitude: 47.4517782,
-          //         longitude: 8.4716146,
-          //       );
-          //       await controller.changeLocationMarker(
-          //         oldLocation: geoPoint,
-          //         newLocation: newGeoPoint,
-          //         markerIcon: const MarkerIcon(
-          //           icon: Icon(
-          //             Icons.bus_alert,
-          //             color: Colors.blue,
-          //             size: 24,
-          //           ),
-          //         ),
-          //       );
-          //     }
-          //     if (!context.mounted) return;
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       SnackBar(
-          //         content: Text(
-          //           geoPoint.toMap().toString(),
-          //         ),
-          //         action: SnackBarAction(
-          //           onPressed: () =>
-          //               ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-          //           label: "hide",
-          //         ),
-          //       ),
-          //     );
-          //   },
-          // ),
-          // Positioned(
-          //   bottom: 10,
-          //   left: 10,
-          //   child: ValueListenableBuilder<bool>(
-          //     valueListenable: visibilityZoomNotifierActivation,
-          //     builder: (ctx, visibility, child) {
-          //       return Visibility(
-          //         visible: visibility,
-          //         child: child!,
-          //       );
-          //     },
-          //     child: ValueListenableBuilder<bool>(
-          //       valueListenable: zoomNotifierActivation,
-          //       builder: (ctx, isVisible, child) {
-          //         return AnimatedOpacity(
-          //           opacity: isVisible ? 1.0 : 0.0,
-          //           onEnd: () {
-          //             visibilityZoomNotifierActivation.value = isVisible;
-          //           },
-          //           duration: const Duration(milliseconds: 500),
-          //           child: child,
-          //         );
-          //       },
-          //       child: Column(
-          //         children: [
-          //           ElevatedButton(
-          //             child: const Icon(Icons.add),
-          //             onPressed: () async {
-          //               controller.zoomIn();
-          //             },
-          //           ),
-          //           const SizedBox(
-          //             height: 16,
-          //           ),
-          //           ElevatedButton(
-          //             child: const Icon(Icons.remove),
-          //             onPressed: () async {
-          //               controller.zoomOut();
-          //             },
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          // ValueListenableBuilder<bool>(
-          //   valueListenable: visibilityOSMLayers,
-          //   builder: (ctx, isVisible, child) {
-          //     if (!isVisible) {
-          //       return const SizedBox.shrink();
-          //     }
-          //     return child!;
-          //   },
-          //   child: ValueListenableBuilder<double>(
-          //     valueListenable: positionOSMLayers,
-          //     builder: (ctx, position, child) {
-          //       return AnimatedPositioned(
-          //         bottom: position,
-          //         left: 24,
-          //         right: 24,
-          //         duration: const Duration(milliseconds: 500),
-          //         child: OSMLayersChoiceWidget(
-          //           centerPoint: centerMap.value!,
-          //           setLayerCallback: (tile) async {
-          //             await controller.changeTileLayer(tileLayer: tile);
-          //           },
-          //         ),
-          //       );
-          //     },
-          //   ),
-          // ),
-          // if (!kIsWeb) ...[
-          //   Positioned(
-          //     top: 5,
-          //     right: 12,
-          //     child: FloatingActionButton(
-          //       key: UniqueKey(),
-          //       heroTag: "rotateCamera",
-          //       onPressed: () async {
-          //         animationController.forward().then((value) {
-          //           animationController.reset();
-          //         });
-          //         mapRotate.value = 0;
-          //         await controller.rotateMapCamera(mapRotate.value.toDouble());
-          //       },
-          //       child: AnimatedBuilder(
-          //         animation: animation,
-          //         builder: (context, child) {
-          //           return Transform.rotate(
-          //             angle: animation.value,
-          //             child: child!,
-          //           );
-          //         },
-          //         child: const Icon(Icons.screen_rotation_alt_outlined),
-          //       ),
-          //     ),
-          //   ),
-          // ],
-          fm.FlutterMap(
-            mapController: _mapController,
-              options: fm.MapOptions(
-                initialCenter: LatLng(22.2700000, 114.1750000),
-                initialZoom: 14,
+          OSMFlutter(
+            controller: controller,
+            osmOption: OSMOption(
+              enableRotationByGesture: true,
+              zoomOption: const ZoomOption(
+                initZoom: 8,
+                minZoomLevel: 3,
+                maxZoomLevel: 19,
+                stepZoom: 1.0,
               ),
-            children: [
-              fm.TileLayer(
-                // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
-                // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
-                // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
-                userAgentPackageName: 'com.example.app', // Required for OSM usage policy
+              userLocationMarker: UserLocationMaker(
+                  personMarker: MarkerIcon(
+                    // icon: Icon(
+                    //   Icons.car_crash_sharp,
+                    //   color: Colors.red,
+                    //   size: 48,
+                    // ),
+                    // iconWidget: SizedBox.square(
+                    //   dimension: 56,
+                    //   child: Image.asset(
+                    //     "asset/taxi.png",
+                    //     scale: .3,
+                    //   ),
+                    // ),
+                    iconWidget: SizedBox(
+                      width: 32,
+                      height: 64,
+                      child: Image.asset(
+                        "asset/directionIcon.png",
+                        scale: .3,
+                      ),
+                    ),
+                    // assetMarker: AssetMarker(
+                    //   image: AssetImage(
+                    //     "asset/taxi.png",
+                    //   ),
+                    //   scaleAssetImage: 0.3,
+                    // ),
+                  ),
+                  directionArrowMarker: MarkerIcon(
+                    // icon: Icon(
+                    //   Icons.navigation_rounded,
+                    //   size: 48,
+                    // ),
+                    iconWidget: SizedBox(
+                      width: 32,
+                      height: 64,
+                      child: Image.asset(
+                        "asset/directionIcon.png",
+                        scale: .3,
+                      ),
+                    ),
+                  )
+                  // directionArrowMarker: MarkerIcon(
+                  //   assetMarker: AssetMarker(
+                  //     image: AssetImage(
+                  //       "asset/taxi.png",
+                  //     ),
+                  //     scaleAssetImage: 0.25,
+                  //   ),
+                  // ),
+                  ),
+              staticPoints: [
+                StaticPositionGeoPoint(
+                  "line 1",
+                  const MarkerIcon(
+                    icon: Icon(
+                      Icons.train,
+                      color: Colors.green,
+                      size: 32,
+                    ),
+                  ),
+                  [
+                    GeoPoint(
+                      latitude: 47.4333594,
+                      longitude: 8.4680184,
+                    ),
+                    GeoPoint(
+                      latitude: 47.4317782,
+                      longitude: 8.4716146,
+                    ),
+                  ],
+                ),
+                /*StaticPositionGeoPoint(
+                      "line 2",
+                      MarkerIcon(
+                        icon: Icon(
+                          Icons.train,
+                          color: Colors.red,
+                          size: 48,
+                        ),
+                      ),
+                      [
+                        GeoPoint(latitude: 47.4433594, longitude: 8.4680184),
+                        GeoPoint(latitude: 47.4517782, longitude: 8.4716146),
+                      ],
+                    )*/
+              ],
+              roadConfiguration: const RoadOption(
+                roadColor: Colors.blueAccent,
               ),
-            ],
+              showContributorBadgeForOSM: true,
+              //trackMyPosition: trackingNotifier.value,
+              showDefaultInfoWindow: false,
+            ),
+            mapIsLoading: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  Text("Map is Loading.."),
+                ],
+              ),
+            ),
+            onMapIsReady: (isReady) {
+              if (isReady) {
+                debugPrint("map is ready");
+              }
+            },
+            onLocationChanged: (myLocation) {
+              debugPrint('user location :$myLocation');
+            },
+            onGeoPointClicked: (geoPoint) async {
+              if (geoPoint ==
+                  GeoPoint(
+                    latitude: 47.442475,
+                    longitude: 8.4680389,
+                  )) {
+                final newGeoPoint = GeoPoint(
+                  latitude: 47.4517782,
+                  longitude: 8.4716146,
+                );
+                await controller.changeLocationMarker(
+                  oldLocation: geoPoint,
+                  newLocation: newGeoPoint,
+                  markerIcon: const MarkerIcon(
+                    icon: Icon(
+                      Icons.bus_alert,
+                      color: Colors.blue,
+                      size: 24,
+                    ),
+                  ),
+                );
+              }
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    geoPoint.toMap().toString(),
+                  ),
+                  action: SnackBarAction(
+                    onPressed: () =>
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                    label: "hide",
+                  ),
+                ),
+              );
+            },
           ),
+          Positioned(
+            bottom: 10,
+            left: 10,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: visibilityZoomNotifierActivation,
+              builder: (ctx, visibility, child) {
+                return Visibility(
+                  visible: visibility,
+                  child: child!,
+                );
+              },
+              child: ValueListenableBuilder<bool>(
+                valueListenable: zoomNotifierActivation,
+                builder: (ctx, isVisible, child) {
+                  return AnimatedOpacity(
+                    opacity: isVisible ? 1.0 : 0.0,
+                    onEnd: () {
+                      visibilityZoomNotifierActivation.value = isVisible;
+                    },
+                    duration: const Duration(milliseconds: 500),
+                    child: child,
+                  );
+                },
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      child: const Icon(Icons.add),
+                      onPressed: () async {
+                        controller.zoomIn();
+                      },
+                    ),
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    ElevatedButton(
+                      child: const Icon(Icons.remove),
+                      onPressed: () async {
+                        controller.zoomOut();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: visibilityOSMLayers,
+            builder: (ctx, isVisible, child) {
+              if (!isVisible) {
+                return const SizedBox.shrink();
+              }
+              return child!;
+            },
+            child: ValueListenableBuilder<double>(
+              valueListenable: positionOSMLayers,
+              builder: (ctx, position, child) {
+                return AnimatedPositioned(
+                  bottom: position,
+                  left: 24,
+                  right: 24,
+                  duration: const Duration(milliseconds: 500),
+                  child: OSMLayersChoiceWidget(
+                    centerPoint: centerMap.value!,
+                    setLayerCallback: (tile) async {
+                      await controller.changeTileLayer(tileLayer: tile);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          if (!kIsWeb) ...[
+            Positioned(
+              top: 5,
+              right: 12,
+              child: FloatingActionButton(
+                key: UniqueKey(),
+                heroTag: "rotateCamera",
+                onPressed: () async {
+                  animationController.forward().then((value) {
+                    animationController.reset();
+                  });
+                  mapRotate.value = 0;
+                  await controller.rotateMapCamera(mapRotate.value.toDouble());
+                },
+                child: AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: animation.value,
+                      child: child!,
+                    );
+                  },
+                  child: const Icon(Icons.screen_rotation_alt_outlined),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
       floatingActionButton: ValueListenableBuilder<bool>(

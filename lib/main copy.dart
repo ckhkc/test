@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart'; // Ensure this import is correct
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -58,11 +59,13 @@ class FirstPageDialog extends StatefulWidget {
 class _FirstPageDialogState extends State<FirstPageDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
     _numberController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -100,6 +103,21 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
                 labelText: 'Number of Destinations',
               ),
             ),
+            const SizedBox(height: 20),
+            const Text(
+              'How much time do you have?',
+              style: TextStyle(fontSize: 20),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _timeController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'In mintues',
+              ),
+            ),
+            
           ],
         ),
       ),
@@ -242,6 +260,7 @@ class _SecondPageState extends State<SecondPage> {
                         name: widget.name,
                         destinations: destinations,
                       ),
+                      // builder: (context) => OldMainExample()
                     ),
                   );
                 },
@@ -266,110 +285,39 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
-  late MapController _mapController;
-  List<GeoPoint> _markerPoints = [];
-  bool _isLoading = true;
+class _MapPageState extends State<MapPage>{
+  final MapController _mapController = MapController();
 
   @override
-  void initState() {
-    super.initState();
-    // Initialize the MapController with a default position (London)
-    _mapController = MapController(
-      initPosition: const GeoPoint(latitude: 51.5074, longitude: -0.1278), // Default to London
-    );
-    _geocodeDestinations();
-  }
 
-  Future<void> _geocodeDestinations() async {
-    for (String destination in widget.destinations) {
-      try {
-        // Convert the destination string to latitude and longitude
-        List<Location> locations = await locationFromAddress(destination);
-        if (locations.isNotEmpty) {
-          Location location = locations.first;
-          GeoPoint point = GeoPoint(
-            latitude: location.latitude,
-            longitude: location.longitude,
-          );
-          _markerPoints.add(point);
-
-          // Add a marker to the map
-          await _mapController.addMarker(
-            point,
-            markerIcon: const MarkerIcon(
-              icon: Icon(
-                Icons.location_pin,
-                color: Colors.blue,
-                size: 48,
-              ),
-            ),
-          );
-        } else {
-          // If no locations are found, show a message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No location found for $destination')),
-          );
-        }
-      } catch (e) {
-        // Handle geocoding errors
-        print('Error geocoding $destination: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not find location for $destination')),
-        );
-      }
-    }
-
-    // If we have at least one marker, center the map on the first one
-    if (_markerPoints.isNotEmpty) {
-      await _mapController.goToLocation(_markerPoints.first);
-      await _mapController.setZoom(zoomLevel: 10);
-    } else {
-      // If no markers were added, show a message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No valid destinations to display on the map')),
-      );
-    }
-
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  @override
-  void dispose() {
-    _mapController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.name}\'s Destinations Map'),
+        foregroundColor: Colors.white,
+        title: const Text("OpenStreetMap"),
+        backgroundColor: Colors.blue,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : OSMFlutter(
-              controller: _mapController,
-              osmOption: const OSMOption(
-                zoomOption: ZoomOption(
-                  initZoom: 10,
-                  minZoomLevel: 3,
-                  maxZoomLevel: 19,
-                  stepZoom: 1.0,
-                ),
-                markerOption: MarkerOption(
-                  defaultMarker: MarkerIcon(
-                    icon: Icon(
-                      Icons.location_pin,
-                      color: Colors.blue,
-                      size: 48,
-                    ),
-                  ),
-                ),
+      body: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+              options: MapOptions(
+                initialCenter: LatLng(22.2700000, 114.1750000),
+                initialZoom: 14,
               ),
-            ),
+            children: [
+              TileLayer(
+                // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
+                // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
+                // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
+                userAgentPackageName: 'com.example.app', // Required for OSM usage policy
+              ),
+            ],
+          ),
+        ],
+      ),
+
     );
   }
 }
