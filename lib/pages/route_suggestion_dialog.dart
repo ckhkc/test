@@ -21,6 +21,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog> {
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
+
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -60,12 +61,26 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Menu',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black87,
+                    // New Back Button (conditionally shown)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.black54,
+                      ), // <- New icon
+                      onPressed:
+                          () =>
+                              model
+                                  .goBackStaticPoints(), // <- Uses the new callback
+                    ),
+
+                    // Title (now centered with Expanded)
+                    Expanded(
+                      // <- Wrapped in Expanded
+                      child: Consumer<BigModel>(
+                        builder:
+                            (context, model, child) => Text(
+                              'The ${model.staticPointsList.length}-th activity',
+                            ),
                       ),
                     ),
                     IconButton(
@@ -89,6 +104,9 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog> {
                               title: itemText['location'] as String,
                               onTap: () {
                                 debugPrint("Clicked: $itemText");
+                                model.addStaticPoints(
+                                  model.staticPointsList.last,
+                                );
                               },
                             );
                           },

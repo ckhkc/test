@@ -104,6 +104,7 @@ class _MapPage extends State<MapPage> {
                     // ScaffoldMessenger.of(context).showSnackBar(
                     //   SnackBar(content: Text('Get Started pressed!')),
                     // );
+                    model.hideRouteDialog();
                     showDialog(
                       context: context,
                       builder: (context) => PromptDialog(),
