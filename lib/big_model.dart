@@ -48,8 +48,8 @@ class BigModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void addStaticPoints(List<Map<String, dynamic>> new_static_points_list) {
-    staticPointsList.add(new_static_points_list);
+  void addStaticPoints(List<Map<String, dynamic>> newStaticPointsList) {
+    staticPointsList.add(newStaticPointsList);
     notifyListeners();
   }
 
