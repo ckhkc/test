@@ -6,6 +6,8 @@ class BigModel with ChangeNotifier {
 
   GeoPoint get point => _point;
 
+  bool _isDialogVisible = false;
+
   List<Map<String, String>> _favorites = [];
 
   List<Map<String, String>> get favorites => _favorites;

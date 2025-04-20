@@ -288,6 +288,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(
@@ -408,44 +409,40 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            if (_nameController.text.isEmpty ||
-                _numberController.text.isEmpty ||
-                _timeController.text.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please fill in all fields to continue.'),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
-              return;
-            }
+            // if (_nameController.text.isEmpty ||
+            //     _numberController.text.isEmpty ||
+            //     _timeController.text.isEmpty) {
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     const SnackBar(
+            //       content: Text('Please fill in all fields to continue.'),
+            //       backgroundColor: Colors.redAccent,
+            //     ),
+            //   );
+            //   return;
+            // }
 
-            int? numberOfFields = int.tryParse(_numberController.text);
-            if (numberOfFields == null || numberOfFields <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Please enter a valid positive number of destinations.',
-                  ),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
-              return;
-            }
+            // int? numberOfFields = int.tryParse(_numberController.text);
+            // if (numberOfFields == null || numberOfFields <= 0) {
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     const SnackBar(
+            //       content: Text(
+            //         'Please enter a valid positive number of destinations.',
+            //       ),
+            //       backgroundColor: Colors.redAccent,
+            //     ),
+            //   );
+            //   return;
+            // }
 
             // Close the dialog
             Navigator.of(context).pop();
-
-            // // Navigate to the second page and pass the name, number, and time
-            // Navigator.push(
+            model._isDialogVisible = true;
+            // setState(() {
+            //       _isDialogVisible = true;
+            //     });
+            // Navigator.pushReplacement(
             //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) => SecondPage(
-            //       name: _nameController.text,
-            //       numberOfFields: numberOfFields,
-            //       time: int.tryParse(_timeController.text) ?? 0,
-            //     ),
-            //   ),
+            //   MaterialPageRoute(builder: (context) => HomePage()),
             // );
           },
           style: ElevatedButton.styleFrom(
@@ -468,3 +465,152 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
     );
   }
 }
+
+class RouteSuggestionDialog extends StatelessWidget {
+  final bool isVisible;
+  final VoidCallback onClose;
+
+  const RouteSuggestionDialog({
+    Key? key,
+    required this.isVisible,
+    required this.onClose,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      left: isVisible ? 0 : -300,
+      top: 0,
+      bottom: 0,
+      width: 300,
+      child: Material(
+        elevation: 8,
+        color: Colors.white,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(2, 0),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Menu',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.black54),
+                      onPressed: onClose,
+                      // {
+                      //   setState(() {
+                      //     _isDialogVisible = false;
+                      //   });
+                      // },
+                    ),
+                  ],
+                ),
+              ),
+              // Scrollable Content
+              Expanded(
+                child: ListView.builder(
+                  itemCount: 20,
+                  itemBuilder: (context, index) {
+                    return _buildMenuItem(
+                      icon: Icons.category,
+                      title: 'Item ${index + 1}',
+                      onTap: () {},
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.black54),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      hoverColor: Colors.grey[100],
+    );
+  }
+}
+
+// class MyHomePage extends StatefulWidget {
+//   const MyHomePage({Key? key}) : super(key: key);
+
+//   @override
+//   _MyHomePageState createState() => _MyHomePageState();
+// }
+
+// class _MyHomePageState extends State<MyHomePage> {
+//   bool _isDialogVisible = false;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Left Side Dialog Demo')),
+//       body: Stack(
+//         children: [
+//           Center(
+//             child: ElevatedButton(
+//               onPressed: () {
+//                 setState(() {
+//                   _isDialogVisible = true;
+//                 });
+//               },
+//               child: const Text('Open Dialog'),
+//             ),
+//           ),
+//           routeSuggestionDialog(
+//             isVisible: _isDialogVisible,
+//             onClose: () {
+//               setState(() {
+//                 _isDialogVisible = false;
+//               });
+//             },
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
