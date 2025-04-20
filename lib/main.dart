@@ -44,8 +44,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      // home: LoginPage(),
-      home: MapPage(),
+      home: LoginPage(),
     );
   }
 }
