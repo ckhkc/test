@@ -31,7 +31,7 @@ class _MapPage extends State<MapPage> {
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => const LocationDialog(),
+                builder: (context) => PinLocDialog(_mapController),
               );
             },
             tooltip: 'Search',
@@ -104,7 +104,7 @@ class _MapPage extends State<MapPage> {
                     );
                     showDialog(
                       context: context,
-                      builder: (context) => const FirstPageDialog(),
+                      builder: (context) => PromptDialog(),
                     );
                   },
                   child: Text('Get Started'),
@@ -118,67 +118,16 @@ class _MapPage extends State<MapPage> {
   }
 }
 
-class LocationScreen extends StatefulWidget {
-  const LocationScreen({super.key});
+class PinLocDialog extends StatefulWidget {
+  final MapController mapController;
+
+  const PinLocDialog(MapController this.mapController, {super.key});
 
   @override
-  _LocationScreenState createState() => _LocationScreenState();
+  _PinLocDialogState createState() => _PinLocDialogState();
 }
 
-class _LocationScreenState extends State<LocationScreen> {
-  GeoPoint? _coordinates;
-
-  Future<void> _openLocationDialog(BuildContext context) async {
-    final result = await showDialog<GeoPoint>(
-      context: context,
-      builder: (context) => const LocationDialog(),
-    );
-
-    if (result != null) {
-      setState(() {
-        _coordinates = result;
-      });
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Coordinates stored: $_coordinates')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Location Coordinates Finder')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () => _openLocationDialog(context),
-              child: const Text('Find Coordinates'),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _coordinates == null
-                  ? 'No coordinates stored'
-                  : 'Stored: $_coordinates',
-              style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LocationDialog extends StatefulWidget {
-  const LocationDialog({super.key});
-
-  @override
-  _LocationDialogState createState() => _LocationDialogState();
-}
-
-class _LocationDialogState extends State<LocationDialog> {
+class _PinLocDialogState extends State<PinLocDialog> {
   final TextEditingController _locationController = TextEditingController();
 
   // Function to query coordinates from Nominatim API
@@ -209,6 +158,7 @@ class _LocationDialogState extends State<LocationDialog> {
           // Return coordinates and close dialog
           Navigator.of(context).pop(GeoPoint(latitude: lat, longitude: lon));
           model.updatePoint(lat, lon);
+          widget.mapController.move(LatLng(lat, lon), 18);
         } else {
           ScaffoldMessenger.of(
             context,
@@ -266,14 +216,14 @@ class _LocationDialogState extends State<LocationDialog> {
 }
 
 // First Page Dialog: Pop-up dialog to prompt for the user's name and a number
-class FirstPageDialog extends StatefulWidget {
-  const FirstPageDialog({super.key});
+class PromptDialog extends StatefulWidget {
+  const PromptDialog({super.key});
 
   @override
-  State<FirstPageDialog> createState() => _FirstPageDialogState();
+  State<PromptDialog> createState() => _PromptDialogState();
 }
 
-class _FirstPageDialogState extends State<FirstPageDialog> {
+class _PromptDialogState extends State<PromptDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
