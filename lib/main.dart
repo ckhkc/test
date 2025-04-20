@@ -29,14 +29,12 @@ class BigModel with ChangeNotifier {
     notifyListeners();
   }
 }
+
 //for debug
 void main() {
   runApp(
-  ChangeNotifierProvider(
-      create: (context) => BigModel(),
-     child: MyApp(),
-      ),
-    );
+    ChangeNotifierProvider(create: (context) => BigModel(), child: MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -52,7 +50,10 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
         textTheme: TextTheme(
           headlineSmall: TextStyle(
-              fontSize: 28, fontWeight: FontWeight.bold, color: Colors.teal[900]),
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.teal[900],
+          ),
           bodyMedium: TextStyle(fontSize: 16, color: Colors.grey[800]),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -87,11 +88,14 @@ class _LoginPageState extends State<LoginPage> {
       // Placeholder for authentication logic
       String email = _emailController.text;
       String password = _passwordController.text;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logging in with $email...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logging in with $email...')));
       Future.delayed(const Duration(seconds: 1));
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
       // TODO: Implement real authentication (e.g., Firebase, API call)
       // Example: Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
     }
@@ -127,10 +131,8 @@ class _LoginPageState extends State<LoginPage> {
                     // App Logo/Title
                     Text(
                       'Wanderlust Planner',
-                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                            color: Colors.white,
-                            letterSpacing: 1.5,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall!
+                          .copyWith(color: Colors.white, letterSpacing: 1.5),
                     ),
                     SizedBox(height: 16),
                     Text(
@@ -197,16 +199,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: 24),
                     // Login Button
-                    ElevatedButton(
-                      onPressed: _login,
-                      child: Text('Login'),
-                    ),
+                    ElevatedButton(onPressed: _login, child: Text('Login')),
                     SizedBox(height: 16),
                     // Sign Up Link
                     TextButton(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Sign Up feature coming soon!')),
+                          SnackBar(
+                            content: Text('Sign Up feature coming soon!'),
+                          ),
                         );
                         // TODO: Navigate to sign-up page
                       },
@@ -256,10 +257,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   final List<Widget> _pages = [
     MapPage(),
-    const AboutPage(),
-    const HistoryPage(),
-    const FavoritePage(),
-    const SettingsPage(),
+    AboutPage(),
+    HistoryPage(),
+    FavoritePage(),
+    SettingsPage(),
   ];
 
   @override
@@ -315,18 +316,17 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 }
 
-class MapPage extends StatefulWidget{
+class MapPage extends StatefulWidget {
   const MapPage({super.key});
-  
+
   @override
   State<MapPage> createState() => _MapPage();
 }
 
-class _MapPage extends State<MapPage>{
+class _MapPage extends State<MapPage> {
   final MapController _mapController = MapController();
   final GeoPoint point = GeoPoint(latitude: 0, longitude: 0);
   @override
-
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
     return Scaffold(
@@ -335,93 +335,92 @@ class _MapPage extends State<MapPage>{
         backgroundColor: Colors.blue,
         toolbarHeight: 40,
         actions: [
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const LocationDialog(),
-                );
-              },
-              tooltip: 'Search',
-            ),
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () {
-                print('Settings button pressed');
-              },
-              tooltip: 'Settings',
-            ),
-            TextButton(
-              onPressed: () {
-                print('Text button pressed');
-              },
-              child: Text(
-                'Action',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const LocationDialog(),
+              );
+            },
+            tooltip: 'Search',
+          ),
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              print('Settings button pressed');
+              print('${model.point}');
+            },
+            tooltip: 'Settings',
+          ),
+          TextButton(
+            onPressed: () {
+              print('Text button pressed');
+            },
+            child: Text('Action', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
       body: Stack(
         children: [
-          
           FlutterMap(
             mapController: _mapController,
-              options: MapOptions(
-                initialCenter: LatLng(22.2700000, 114.1750000),
-                initialZoom: 14,
-              ),
+            options: MapOptions(
+              initialCenter: LatLng(22.2700000, 114.1750000),
+              initialZoom: 14,
+            ),
             children: [
               TileLayer(
                 // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
+                urlTemplate:
+                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
                 // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
                 // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
-                userAgentPackageName: 'com.example.app', // Required for OSM usage policy
+                userAgentPackageName:
+                    'com.example.app', // Required for OSM usage policy
               ),
-              MarkerLayer(markers: [
-                Marker(
-                  // point: LatLng(point.latitude, point.longitude),
-                  point: LatLng(model.point.latitude, model.point.longitude),
-                  width: 60,
-                  height: 60,
-                  alignment: Alignment.centerLeft,
-                  child: Icon(
-                    Icons.location_pin,
-                    size: 30,
-                    color: Colors.red,
-                  )
-                )
-              ]
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    // point: LatLng(point.latitude, point.longitude),
+                    point: LatLng(model.point.latitude, model.point.longitude),
+                    width: 60,
+                    height: 60,
+                    alignment: Alignment.centerLeft,
+                    child: Icon(
+                      Icons.location_pin,
+                      size: 30,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           Positioned(
-                left: 0,
-                right: 0,
-                bottom: 16,
-                child: Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.8, // 80% of screen width
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Get Started pressed!')),
-                          
-                        );
-                        print(point);
-                        showDialog(
-                          context: context,
-                          builder: (context) => const FirstPageDialog(),
-                        );
-                      },
-                      child: Text('Get Started'),
-                    ),
-                  ),
+            left: 0,
+            right: 0,
+            bottom: 16,
+            child: Center(
+              child: SizedBox(
+                width:
+                    MediaQuery.of(context).size.width *
+                    0.8, // 80% of screen width
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Get Started pressed!')),
+                    );
+                    showDialog(
+                      context: context,
+                      builder: (context) => const FirstPageDialog(),
+                    );
+                  },
+                  child: Text('Get Started'),
                 ),
               ),
+            ),
+          ),
         ],
       ),
     );
@@ -434,6 +433,7 @@ class LocationScreen extends StatefulWidget {
   @override
   _LocationScreenState createState() => _LocationScreenState();
 }
+
 class _LocationScreenState extends State<LocationScreen> {
   GeoPoint? _coordinates;
 
@@ -457,9 +457,7 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Location Coordinates Finder'),
-      ),
+      appBar: AppBar(title: const Text('Location Coordinates Finder')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -467,7 +465,6 @@ class _LocationScreenState extends State<LocationScreen> {
             ElevatedButton(
               onPressed: () => _openLocationDialog(context),
               child: const Text('Find Coordinates'),
-              
             ),
             const SizedBox(height: 20),
             Text(
@@ -495,11 +492,11 @@ class _LocationDialogState extends State<LocationDialog> {
 
   // Function to query coordinates from Nominatim API
   Future<void> _searchLocation(String location) async {
-    final model = Provider.of<BigModel>(context);
+    final model = Provider.of<BigModel>(context, listen: false);
     if (location.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a location')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a location')));
       return;
     }
 
@@ -522,9 +519,9 @@ class _LocationDialogState extends State<LocationDialog> {
           Navigator.of(context).pop(GeoPoint(latitude: lat, longitude: lon));
           model.updatePoint(lat, lon);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location not found')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Location not found')));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -532,9 +529,9 @@ class _LocationDialogState extends State<LocationDialog> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -546,7 +543,6 @@ class _LocationDialogState extends State<LocationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final model = Provider.of<BigModel>(context);
     return AlertDialog(
       title: const Text('Find Location Coordinates'),
       content: SingleChildScrollView(
@@ -562,9 +558,7 @@ class _LocationDialogState extends State<LocationDialog> {
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () =>  {
-                _searchLocation(_locationController.text),
-              },
+              onPressed: () => {_searchLocation(_locationController.text)},
               child: const Text('Search'),
             ),
           ],
@@ -579,6 +573,7 @@ class _LocationDialogState extends State<LocationDialog> {
     );
   }
 }
+
 // First Page Dialog: Pop-up dialog to prompt for the user's name and a number
 class FirstPageDialog extends StatefulWidget {
   const FirstPageDialog({super.key});
@@ -604,16 +599,14 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20), // Rounded corners for a modern look
+        borderRadius: BorderRadius.circular(
+          20,
+        ), // Rounded corners for a modern look
       ),
       backgroundColor: Colors.white, // Clean background
       title: Row(
         children: [
-          Icon(
-            Icons.map_rounded,
-            color: Colors.blueAccent,
-            size: 30,
-          ),
+          Icon(Icons.map_rounded, color: Colors.blueAccent, size: 30),
           const SizedBox(width: 10),
           const Text(
             'Plan Your Adventure',
@@ -719,10 +712,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
           },
           child: const Text(
             'Cancel',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
         ),
         ElevatedButton(
@@ -743,7 +733,9 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
             if (numberOfFields == null || numberOfFields <= 0) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Please enter a valid positive number of destinations.'),
+                  content: Text(
+                    'Please enter a valid positive number of destinations.',
+                  ),
                   backgroundColor: Colors.redAccent,
                 ),
               );
@@ -878,32 +870,29 @@ class _HistoryPage extends State<HistoryPage> {
             ),
           ],
           // Define rows from sample data
-          rows: tableData
-              .map(
-                (data) => DataRow(
-                  cells: [
-                    DataCell(Text(data['starting']!)),
-                    DataCell(Text(data['destination']!)),
-                    DataCell(Text(data['timeCost']!)),
-                    DataCell(Text(data['staging']!)),
-                  ],
-                ),
-              )
-              .toList(),
+          rows:
+              tableData
+                  .map(
+                    (data) => DataRow(
+                      cells: [
+                        DataCell(Text(data['starting']!)),
+                        DataCell(Text(data['destination']!)),
+                        DataCell(Text(data['timeCost']!)),
+                        DataCell(Text(data['staging']!)),
+                      ],
+                    ),
+                  )
+                  .toList(),
           // Optional styling
           columnSpacing: 20.0,
           dataRowHeight: 50.0,
           headingRowColor: MaterialStateProperty.all(Colors.blue[100]),
-          border: TableBorder.all(
-            color: Colors.grey,
-            width: 1.0,
-          ),
+          border: TableBorder.all(color: Colors.grey, width: 1.0),
         ),
       ),
     );
   }
 }
-
 
 class FavoritePage extends StatelessWidget {
   const FavoritePage({super.key});
@@ -971,4 +960,3 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
-
