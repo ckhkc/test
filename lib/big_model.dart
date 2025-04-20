@@ -14,7 +14,16 @@ class BigModel with ChangeNotifier {
 
   List<Map<String, String>> get favorites => _favorites;
 
-  List<List<Map<String, dynamic>>> staticPointsList = [];
+  // List<List<Map<String, dynamic>>> staticPointsList = [];
+
+  List<List<Map<String, dynamic>>> staticPointsList = [
+    [
+      {'latitude': 22.277559019404148, 'longitude': 114.17313411995005},
+      {'latitude': 22.28024358896722, 'longitude': 114.18497713092883},
+      {'latitude': 22.28251328662275, 'longitude': 114.19185048857794},
+      {'latitude': 22.28790, 'longitude': 114.19361},
+    ],
+  ];
 
   void updatePoint(double latitude, double longitude) {
     _point = GeoPoint(latitude: latitude, longitude: longitude);

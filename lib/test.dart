@@ -1,164 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Left Side Dialog Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const MyHomePage(),
-    );
+    return const MaterialApp(home: MapScreen());
   }
 }
 
-class LeftSideDialog extends StatelessWidget {
-  final bool isVisible;
-  final VoidCallback onClose;
-
-  const LeftSideDialog({
-    Key? key,
-    required this.isVisible,
-    required this.onClose,
-  }) : super(key: key);
+class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      left: isVisible ? 0 : -300,
-      top: 0,
-      bottom: 0,
-      width: 300,
-      child: Material(
-        elevation: 8,
-        color: Colors.white,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(2, 0),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Menu',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black54),
-                      onPressed: onClose,
-                    ),
-                  ],
-                ),
-              ),
-              // Scrollable Content
-              Expanded(
-                child: ListView.builder(
-                  itemCount: 20,
-                  itemBuilder: (context, index) {
-                    return _buildMenuItem(
-                      icon: Icons.category,
-                      title: 'Item ${index + 1}',
-                      onTap: () {},
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black54),
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 16, color: Colors.black87),
-      ),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      hoverColor: Colors.grey[100],
-    );
-  }
+  State<MapScreen> createState() => _MapScreenState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class _MapScreenState extends State<MapScreen> {
+  final _mapController = MapController(
+    initPosition: GeoPoint(latitude: 51.5074, longitude: -0.1278), // London
+  );
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
+  void initState() {
+    super.initState();
+    _addMarker();
+  }
 
-class _MyHomePageState extends State<MyHomePage> {
-  bool _isDialogVisible = false;
+  // Add a marker at the specified location
+  void _addMarker() {
+    _mapController.addMarker(
+      GeoPoint(latitude: 51.5074, longitude: -0.1278),
+      markerIcon: const MarkerIcon(
+        icon: Icon(Icons.location_pin, color: Colors.red, size: 40),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Left Side Dialog Demo')),
-      body: Stack(
-        children: [
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _isDialogVisible = true;
-                });
-              },
-              child: const Text('Open Dialog'),
-            ),
-          ),
-          LeftSideDialog(
-            isVisible: _isDialogVisible,
-            onClose: () {
-              setState(() {
-                // _isDialogVisible = false;
-              });
-            },
-          ),
-        ],
+      body: OSMFlutter(
+        controller: _mapController,
+        osmOption: const OSMOption(zoomOption: ZoomOption(initZoom: 12)),
       ),
     );
   }
