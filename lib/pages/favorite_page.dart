@@ -5,10 +5,6 @@ import 'package:provider/provider.dart';
 // Favorite Routes Page
 class FavoritePage extends StatelessWidget {
   FavoritePage({super.key});
-  // final BigModel bigModel;
-  // late int index;
-
-  // FavoriteRoutesPage({required this._bigmodel});
   late List<Map<String, String>> favoriteRoute = [];
 
   @override
@@ -20,10 +16,6 @@ class FavoritePage extends StatelessWidget {
         backgroundColor: Colors.redAccent,
         elevation: 0,
       ),
-      // body: AnimatedBuilder(
-      //   animation: _bigModel,
-      //   builder: (context, _) {
-      //     return _bigModel.favorites.isEmpty
       body:
           model.favorites.isEmpty
               ? Center(
