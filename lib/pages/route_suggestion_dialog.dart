@@ -17,7 +17,35 @@ class RouteSuggestionDialog extends StatefulWidget {
   State<RouteSuggestionDialog> createState() => _RouteSuggestionDialogState();
 }
 
-class _RouteSuggestionDialogState extends State<RouteSuggestionDialog> {
+class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
+    with TickerProviderStateMixin {
+  late AnimationController _enterController;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Now 'this' is a valid TickerProvider
+    _enterController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this, // This now works correctly
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _enterController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _enterController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
@@ -32,91 +60,120 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog> {
       child: Material(
         elevation: 8,
         color: Colors.white,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(2, 0),
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(16),
+                bottomRight: Radius.circular(16),
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(2, 0),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // New Back Button (conditionally shown)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.black54,
+                        ), // <- New icon
+                        onPressed: () {
+                          _navigateBackward();
+                          model.goBackStaticPoints();
+                        },
+                      ),
+
+                      // Title (now centered with Expanded)
+                      Expanded(
+                        // <- Wrapped in Expanded
+                        child: Consumer<BigModel>(
+                          builder:
+                              (context, model, child) => Text(
+                                'The ${model.staticPointsList.length}-th activity',
+                              ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black54),
+                        onPressed: widget.onClose,
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // New Back Button (conditionally shown)
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.black54,
-                      ), // <- New icon
-                      onPressed:
-                          () =>
-                              model
-                                  .goBackStaticPoints(), // <- Uses the new callback
-                    ),
-
-                    // Title (now centered with Expanded)
-                    Expanded(
-                      // <- Wrapped in Expanded
-                      child: Consumer<BigModel>(
-                        builder:
-                            (context, model, child) => Text(
-                              'The ${model.staticPointsList.length}-th activity',
-                            ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black54),
-                      onPressed: widget.onClose,
-                    ),
-                  ],
+                // Scrollable Content
+                Expanded(
+                  child:
+                      model.staticPointsList.isEmpty
+                          ? const Center(child: Text("No items available"))
+                          : ListView.builder(
+                            itemCount: model.staticPointsList.last.length,
+                            itemBuilder: (context, index) {
+                              final itemText =
+                                  model.staticPointsList.last[index];
+                              return _buildMenuItem(
+                                icon: Icons.category,
+                                title: itemText['location'] as String,
+                                onTap: () {
+                                  debugPrint("Clicked: $itemText");
+                                  _navigateForward();
+                                  model.addStaticPoints(
+                                    model.staticPointsList.last,
+                                  );
+                                },
+                              );
+                            },
+                          ),
                 ),
-              ),
-              // Scrollable Content
-              Expanded(
-                child:
-                    model.staticPointsList.isEmpty
-                        ? const Center(child: Text("No items available"))
-                        : ListView.builder(
-                          itemCount: model.staticPointsList.last.length,
-                          itemBuilder: (context, index) {
-                            final itemText = model.staticPointsList.last[index];
-                            return _buildMenuItem(
-                              icon: Icons.category,
-                              title: itemText['location'] as String,
-                              onTap: () {
-                                debugPrint("Clicked: $itemText");
-                                model.addStaticPoints(
-                                  model.staticPointsList.last,
-                                );
-                              },
-                            );
-                          },
-                        ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _navigateForward() async {
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0), // Enters from right
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _enterController, curve: Curves.easeInOut),
+    );
+
+    _enterController.reset();
+    await _enterController.forward();
+  }
+
+  void _navigateBackward() async {
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(-1.0, 0.0), // Enters from left (mirror of forward)
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _enterController, curve: Curves.easeInOut),
+    );
+
+    _enterController.reset();
+    await _enterController.forward();
   }
 
   Widget _buildMenuItem({
