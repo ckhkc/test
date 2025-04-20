@@ -12,9 +12,9 @@ import 'package:test/big_model.dart';
 
 //for debug
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp();
+  // await Firebase.initializeApp();
 
   runApp(
     ChangeNotifierProvider(create: (context) => BigModel(), child: MyApp()),
