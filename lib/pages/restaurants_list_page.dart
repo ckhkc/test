@@ -127,7 +127,7 @@ class _RestaurantCardState extends State<RestaurantCard>
             ? widget.restaurant['address']
             : 'Address Not Available';
     final travelTime = widget.restaurant['travel_time']?.toString() ?? 'N/A';
-    final openingHour = widget.restaurant['opening_hour']?.toString() ?? 'N/A';
+    final openingHour = widget.restaurant['opening_hours']?.toString() ?? 'N/A';
 
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),

@@ -220,19 +220,42 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                                           decodedJson['restaurants'] as List? ??
                                           [];
 
-                                      final List<Map<String, dynamic>>
-                                      restaurantList =
-                                          restaurants
-                                              .cast<Map<dynamic, dynamic>>()
-                                              .map(
-                                                (e) =>
-                                                    e.cast<String, dynamic>(),
-                                              )
-                                              .toList();
-                                      // print(restaurants);
-                                      // print(restaurantList);
-                                      model.setRestaurants(restaurantList);
-                                      model.showRestaurants();
+                                      if (restaurants.isEmpty) {
+                                        showDialog(
+                                          context: context,
+                                          builder:
+                                              (context) => AlertDialog(
+                                                title: Text('Error'),
+                                                content: Text(
+                                                  'This $district is not currently available.',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed:
+                                                        () =>
+                                                            Navigator.of(
+                                                              context,
+                                                            ).pop(),
+                                                    child: Text('OK'),
+                                                  ),
+                                                ],
+                                              ),
+                                        );
+                                      } else {
+                                        final List<Map<String, dynamic>>
+                                        restaurantList =
+                                            restaurants
+                                                .cast<Map<dynamic, dynamic>>()
+                                                .map(
+                                                  (e) =>
+                                                      e.cast<String, dynamic>(),
+                                                )
+                                                .toList();
+                                        // print(restaurants);
+                                        // print(restaurantList);
+                                        model.setRestaurants(restaurantList);
+                                        model.showRestaurants();
+                                      }
                                     } else {
                                       showDialog(
                                         context: context,
