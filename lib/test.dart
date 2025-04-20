@@ -154,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
             isVisible: _isDialogVisible,
             onClose: () {
               setState(() {
-                _isDialogVisible = false;
+                // _isDialogVisible = false;
               });
             },
           ),

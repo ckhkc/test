@@ -40,7 +40,6 @@ class _MapPage extends State<MapPage> {
             icon: Icon(Icons.settings),
             onPressed: () {
               print('Settings button pressed');
-              print('${model.point}');
             },
             tooltip: 'Settings',
           ),
@@ -111,6 +110,14 @@ class _MapPage extends State<MapPage> {
                 ),
               ),
             ),
+          ),
+          RouteSuggestionDialog(
+            isVisible: model.isDialogVisible,
+            onClose: () {
+              setState(() {
+                model.invisible();
+              });
+            },
           ),
         ],
       ),
@@ -277,6 +284,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
+  // late BigModel _bigModel;
 
   @override
   void dispose() {
@@ -288,7 +296,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final model = Provider.of<BigModel>(context);
+    late BigModel model = Provider.of<BigModel>(context, listen: false);
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(
@@ -436,14 +444,9 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
 
             // Close the dialog
             Navigator.of(context).pop();
-            model._isDialogVisible = true;
-            // setState(() {
-            //       _isDialogVisible = true;
-            //     });
-            // Navigator.pushReplacement(
-            //   context,
-            //   MaterialPageRoute(builder: (context) => HomePage()),
-            // );
+            setState(() {
+              model.visible();
+            });
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blueAccent,
@@ -467,10 +470,11 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
 }
 
 class RouteSuggestionDialog extends StatelessWidget {
-  final bool isVisible;
+  // late BigModel model;
+  bool isVisible;
   final VoidCallback onClose;
 
-  const RouteSuggestionDialog({
+  RouteSuggestionDialog({
     Key? key,
     required this.isVisible,
     required this.onClose,
@@ -528,11 +532,6 @@ class RouteSuggestionDialog extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.black54),
                       onPressed: onClose,
-                      // {
-                      //   setState(() {
-                      //     _isDialogVisible = false;
-                      //   });
-                      // },
                     ),
                   ],
                 ),
@@ -574,43 +573,3 @@ class RouteSuggestionDialog extends StatelessWidget {
     );
   }
 }
-
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({Key? key}) : super(key: key);
-
-//   @override
-//   _MyHomePageState createState() => _MyHomePageState();
-// }
-
-// class _MyHomePageState extends State<MyHomePage> {
-//   bool _isDialogVisible = false;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Left Side Dialog Demo')),
-//       body: Stack(
-//         children: [
-//           Center(
-//             child: ElevatedButton(
-//               onPressed: () {
-//                 setState(() {
-//                   _isDialogVisible = true;
-//                 });
-//               },
-//               child: const Text('Open Dialog'),
-//             ),
-//           ),
-//           routeSuggestionDialog(
-//             isVisible: _isDialogVisible,
-//             onClose: () {
-//               setState(() {
-//                 _isDialogVisible = false;
-//               });
-//             },
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }

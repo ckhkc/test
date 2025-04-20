@@ -6,7 +6,9 @@ class BigModel with ChangeNotifier {
 
   GeoPoint get point => _point;
 
-  bool _isDialogVisible = false;
+  bool isDialogVisible;
+
+  BigModel({this.isDialogVisible = false});
 
   List<Map<String, String>> _favorites = [];
 
@@ -31,5 +33,15 @@ class BigModel with ChangeNotifier {
 
   bool isFavorite(String routeName) {
     return _favorites.any((r) => r['name'] == routeName);
+  }
+
+  void visible() {
+    isDialogVisible = true;
+    notifyListeners();
+  }
+
+  void invisible() {
+    isDialogVisible = false;
+    notifyListeners();
   }
 }
