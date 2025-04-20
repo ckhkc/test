@@ -38,6 +38,23 @@ class RestaurantListPage extends StatelessWidget {
           ),
         ),
       ),
+      // body: Container(
+      //   decoration: BoxDecoration(
+      //     gradient: LinearGradient(
+      //       colors: [Colors.purple[50]!, Colors.blue[50]!],
+      //       begin: Alignment.topCenter,
+      //       end: Alignment.bottomCenter,
+      //     ),
+      //   ),
+      //   child: ListView.builder(
+      //     padding: const EdgeInsets.all(16.0),
+      //     itemCount: model.restaurants.length,
+      //     itemBuilder: (context, index) {
+      //       final restaurant = model.restaurants[index];
+      //       return RestaurantCard(restaurant: restaurant);
+      //     },
+      //   ),
+      // ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -46,12 +63,17 @@ class RestaurantListPage extends StatelessWidget {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: ListView.builder(
+        child: GridView.builder(
           padding: const EdgeInsets.all(16.0),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, // 2 cards per row
+            crossAxisSpacing: 16.0,
+            mainAxisSpacing: 16.0,
+            childAspectRatio: 1.3, // Adjust for card height
+          ),
           itemCount: model.restaurants.length,
           itemBuilder: (context, index) {
-            final restaurant = model.restaurants[index];
-            return RestaurantCard(restaurant: restaurant);
+            return RestaurantCard(restaurant: model.restaurants[index]);
           },
         ),
       ),
@@ -94,7 +116,6 @@ class _RestaurantCardState extends State<RestaurantCard>
 
   @override
   Widget build(BuildContext context) {
-    print(widget.restaurant);
     final model = Provider.of<BigModel>(context, listen: false);
     // Handle missing data
     final name = widget.restaurant['name'] ?? 'Unknown Restaurant';
@@ -106,6 +127,7 @@ class _RestaurantCardState extends State<RestaurantCard>
             ? widget.restaurant['address']
             : 'Address Not Available';
     final travelTime = widget.restaurant['travel_time']?.toString() ?? 'N/A';
+    final openingHour = widget.restaurant['opening_hour']?.toString() ?? 'N/A';
 
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),
@@ -117,15 +139,14 @@ class _RestaurantCardState extends State<RestaurantCard>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Card(
-          elevation: 8,
+          elevation: 6,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: Colors.purpleAccent, width: 1),
           ),
-          margin: const EdgeInsets.symmetric(vertical: 12),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               gradient: const LinearGradient(
                 colors: [Colors.white, Colors.purpleAccent],
                 begin: Alignment.topLeft,
@@ -134,28 +155,30 @@ class _RestaurantCardState extends State<RestaurantCard>
               boxShadow: [
                 BoxShadow(
                   color: Colors.purple.withOpacity(0.3),
-                  blurRadius: 10,
+                  blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name with flair
+                  // Name
                   Text(
                     name,
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 18,
                       fontWeight: FontWeight.w900,
                       color: Colors.blueAccent,
-                      letterSpacing: 1.2,
+                      letterSpacing: 1.1,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
-                  // Rating with spark
+                  const SizedBox(height: 8),
+                  // Rating
                   Row(
                     children: [
                       RatingBarIndicator(
@@ -166,84 +189,59 @@ class _RestaurantCardState extends State<RestaurantCard>
                               color: Colors.amberAccent,
                             ),
                         itemCount: 5,
-                        itemSize: 24.0,
+                        itemSize: 18.0,
                         direction: Axis.horizontal,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       Text(
-                        rating > 0 ? '$rating / 5' : 'Unrated',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.bold,
-                        ),
+                        rating > 0 ? rating.toStringAsFixed(1) : 'N/A',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[800]),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  // Cuisine Type with zest
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.restaurant_menu,
-                        size: 20,
-                        color: Colors.purpleAccent,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        type,
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[900],
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  // Cuisine Type
+                  Text(
+                    type,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[900],
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
-                  // Address with location vibe
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 20,
-                        color: Colors.purpleAccent,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          address,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[800],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  // Address
+                  Expanded(
+                    child: Text(
+                      address,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  // Travel Time with motion
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Text(
+                      openingHour,
+                      style: TextStyle(fontSize: 10, color: Colors.grey[800]),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // Travel Time
                   Row(
                     children: [
                       const Icon(
                         Icons.directions_walk,
-                        size: 20,
+                        size: 16,
                         color: Colors.purpleAccent,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       Text(
-                        travelTime != 'N/A'
-                            ? '$travelTime mins'
-                            : 'Time Unknown',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.w500,
-                        ),
+                        travelTime != 'N/A' ? '$travelTime min' : 'N/A',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[800]),
                       ),
                     ],
                   ),
