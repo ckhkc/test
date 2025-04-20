@@ -6,6 +6,7 @@ import 'package:test/pages/history_page.dart';
 import 'package:test/pages/login_page.dart';
 import 'package:test/pages/map_page.dart';
 import 'package:test/pages/settings_page.dart';
+import 'package:test/pages/restaurants_list_page.dart';
 import 'package:test/geo_point.dart';
 import 'package:test/big_model.dart';
 
@@ -88,6 +89,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Top Navigation App'),
@@ -107,7 +109,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           ),
         ),
       ),
-      body: _pages[_currentIndex],
+      body:
+          model.restaurantPageVisible
+              ? RestaurantListPage()
+              : _pages[_currentIndex],
     );
   }
 
