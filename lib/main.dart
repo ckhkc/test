@@ -29,18 +29,17 @@ class BigModel with ChangeNotifier {
     notifyListeners();
   }
 }
+
 //for debug
 void main() {
   runApp(
-  ChangeNotifierProvider(
-      create: (context) => BigModel(),
-     child: MyApp(),
-      ),
-    );
+    ChangeNotifierProvider(create: (context) => BigModel(), child: MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key, required this.favoritesModel});
+  final FavoritesModel favoritesModel;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +51,10 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
         textTheme: TextTheme(
           headlineSmall: TextStyle(
-              fontSize: 28, fontWeight: FontWeight.bold, color: Colors.teal[900]),
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.teal[900],
+          ),
           bodyMedium: TextStyle(fontSize: 16, color: Colors.grey[800]),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -65,7 +67,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       // home: LoginPage(),
-      home: MapPage(),
+      home: HomePage(favoritesModel: favoritesModel),
     );
   }
 }
@@ -81,17 +83,23 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final FavoritesModel favoritesModel = FavoritesModel();
 
   void _login() {
     if (_formKey.currentState!.validate()) {
       // Placeholder for authentication logic
       String email = _emailController.text;
       String password = _passwordController.text;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logging in with $email...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logging in with $email...')));
       Future.delayed(const Duration(seconds: 1));
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(favoritesModel: favoritesModel),
+        ),
+      );
       // TODO: Implement real authentication (e.g., Firebase, API call)
       // Example: Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
     }
@@ -127,10 +135,8 @@ class _LoginPageState extends State<LoginPage> {
                     // App Logo/Title
                     Text(
                       'Wanderlust Planner',
-                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                            color: Colors.white,
-                            letterSpacing: 1.5,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall!
+                          .copyWith(color: Colors.white, letterSpacing: 1.5),
                     ),
                     SizedBox(height: 16),
                     Text(
@@ -197,16 +203,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: 24),
                     // Login Button
-                    ElevatedButton(
-                      onPressed: _login,
-                      child: Text('Login'),
-                    ),
+                    ElevatedButton(onPressed: _login, child: Text('Login')),
                     SizedBox(height: 16),
                     // Sign Up Link
                     TextButton(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Sign Up feature coming soon!')),
+                          SnackBar(
+                            content: Text('Sign Up feature coming soon!'),
+                          ),
                         );
                         // TODO: Navigate to sign-up page
                       },
@@ -227,7 +232,9 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, required this.favoritesModel});
+
+  final FavoritesModel favoritesModel;
 
   @override
   Widget build(BuildContext context) {
@@ -238,14 +245,15 @@ class HomePage extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
         useMaterial3: true, // For modern Material Design
       ),
-      home: const MainNavigationPage(),
+      home: MainNavigationPage(favoritesModel: favoritesModel),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class MainNavigationPage extends StatefulWidget {
-  const MainNavigationPage({super.key});
+  const MainNavigationPage({super.key, required this.favoritesModel});
+  final FavoritesModel favoritesModel;
 
   @override
   State<MainNavigationPage> createState() => _MainNavigationPageState();
@@ -257,10 +265,12 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   final List<Widget> _pages = [
     MapPage(),
     const AboutPage(),
-    const HistoryPage(),
+    HistoryPage(favoritesModel: favoritesModel),
     const FavoritePage(),
     const SettingsPage(),
   ];
+
+  static get favoritesModel => null;
 
   @override
   Widget build(BuildContext context) {
@@ -315,18 +325,17 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 }
 
-class MapPage extends StatefulWidget{
+class MapPage extends StatefulWidget {
   const MapPage({super.key});
-  
+
   @override
   State<MapPage> createState() => _MapPage();
 }
 
-class _MapPage extends State<MapPage>{
+class _MapPage extends State<MapPage> {
   final MapController _mapController = MapController();
   final GeoPoint point = GeoPoint(latitude: 0, longitude: 0);
   @override
-
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
     return Scaffold(
@@ -335,93 +344,92 @@ class _MapPage extends State<MapPage>{
         backgroundColor: Colors.blue,
         toolbarHeight: 40,
         actions: [
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const LocationDialog(),
-                );
-              },
-              tooltip: 'Search',
-            ),
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () {
-                print('Settings button pressed');
-              },
-              tooltip: 'Settings',
-            ),
-            TextButton(
-              onPressed: () {
-                print('Text button pressed');
-              },
-              child: Text(
-                'Action',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const LocationDialog(),
+              );
+            },
+            tooltip: 'Search',
+          ),
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              print('Settings button pressed');
+            },
+            tooltip: 'Settings',
+          ),
+          TextButton(
+            onPressed: () {
+              print('Text button pressed');
+            },
+            child: Text('Action', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
       body: Stack(
         children: [
-          
           FlutterMap(
             mapController: _mapController,
-              options: MapOptions(
-                initialCenter: LatLng(22.2700000, 114.1750000),
-                initialZoom: 14,
-              ),
+            options: MapOptions(
+              initialCenter: LatLng(22.2700000, 114.1750000),
+              initialZoom: 14,
+            ),
             children: [
               TileLayer(
                 // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
+                urlTemplate:
+                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
                 // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
                 // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
-                userAgentPackageName: 'com.example.app', // Required for OSM usage policy
+                userAgentPackageName:
+                    'com.example.app', // Required for OSM usage policy
               ),
-              MarkerLayer(markers: [
-                Marker(
-                  // point: LatLng(point.latitude, point.longitude),
-                  point: LatLng(model.point.latitude, model.point.longitude),
-                  width: 60,
-                  height: 60,
-                  alignment: Alignment.centerLeft,
-                  child: Icon(
-                    Icons.location_pin,
-                    size: 30,
-                    color: Colors.red,
-                  )
-                )
-              ]
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    // point: LatLng(point.latitude, point.longitude),
+                    point: LatLng(model.point.latitude, model.point.longitude),
+                    width: 60,
+                    height: 60,
+                    alignment: Alignment.centerLeft,
+                    child: Icon(
+                      Icons.location_pin,
+                      size: 30,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           Positioned(
-                left: 0,
-                right: 0,
-                bottom: 16,
-                child: Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.8, // 80% of screen width
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Get Started pressed!')),
-                          
-                        );
-                        print(point);
-                        showDialog(
-                          context: context,
-                          builder: (context) => const FirstPageDialog(),
-                        );
-                      },
-                      child: Text('Get Started'),
-                    ),
-                  ),
+            left: 0,
+            right: 0,
+            bottom: 16,
+            child: Center(
+              child: SizedBox(
+                width:
+                    MediaQuery.of(context).size.width *
+                    0.8, // 80% of screen width
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Get Started pressed!')),
+                    );
+                    print(point);
+                    showDialog(
+                      context: context,
+                      builder: (context) => const FirstPageDialog(),
+                    );
+                  },
+                  child: Text('Get Started'),
                 ),
               ),
+            ),
+          ),
         ],
       ),
     );
@@ -434,6 +442,7 @@ class LocationScreen extends StatefulWidget {
   @override
   _LocationScreenState createState() => _LocationScreenState();
 }
+
 class _LocationScreenState extends State<LocationScreen> {
   GeoPoint? _coordinates;
 
@@ -457,9 +466,7 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Location Coordinates Finder'),
-      ),
+      appBar: AppBar(title: const Text('Location Coordinates Finder')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -467,7 +474,6 @@ class _LocationScreenState extends State<LocationScreen> {
             ElevatedButton(
               onPressed: () => _openLocationDialog(context),
               child: const Text('Find Coordinates'),
-              
             ),
             const SizedBox(height: 20),
             Text(
@@ -497,9 +503,9 @@ class _LocationDialogState extends State<LocationDialog> {
   Future<void> _searchLocation(String location) async {
     final model = Provider.of<BigModel>(context);
     if (location.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a location')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a location')));
       return;
     }
 
@@ -522,9 +528,9 @@ class _LocationDialogState extends State<LocationDialog> {
           Navigator.of(context).pop(GeoPoint(latitude: lat, longitude: lon));
           model.updatePoint(lat, lon);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location not found')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Location not found')));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -532,9 +538,9 @@ class _LocationDialogState extends State<LocationDialog> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -562,9 +568,7 @@ class _LocationDialogState extends State<LocationDialog> {
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () =>  {
-                _searchLocation(_locationController.text),
-              },
+              onPressed: () => {_searchLocation(_locationController.text)},
               child: const Text('Search'),
             ),
           ],
@@ -579,6 +583,7 @@ class _LocationDialogState extends State<LocationDialog> {
     );
   }
 }
+
 // First Page Dialog: Pop-up dialog to prompt for the user's name and a number
 class FirstPageDialog extends StatefulWidget {
   const FirstPageDialog({super.key});
@@ -604,16 +609,14 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20), // Rounded corners for a modern look
+        borderRadius: BorderRadius.circular(
+          20,
+        ), // Rounded corners for a modern look
       ),
       backgroundColor: Colors.white, // Clean background
       title: Row(
         children: [
-          Icon(
-            Icons.map_rounded,
-            color: Colors.blueAccent,
-            size: 30,
-          ),
+          Icon(Icons.map_rounded, color: Colors.blueAccent, size: 30),
           const SizedBox(width: 10),
           const Text(
             'Plan Your Adventure',
@@ -719,10 +722,7 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
           },
           child: const Text(
             'Cancel',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
         ),
         ElevatedButton(
@@ -743,27 +743,16 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
             if (numberOfFields == null || numberOfFields <= 0) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Please enter a valid positive number of destinations.'),
+                  content: Text(
+                    'Please enter a valid positive number of destinations.',
+                  ),
                   backgroundColor: Colors.redAccent,
                 ),
               );
               return;
             }
-
             // Close the dialog
             Navigator.of(context).pop();
-
-            // // Navigate to the second page and pass the name, number, and time
-            // Navigator.push(
-            //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) => SecondPage(
-            //       name: _nameController.text,
-            //       numberOfFields: numberOfFields,
-            //       time: int.tryParse(_timeController.text) ?? 0,
-            //     ),
-            //   ),
-            // );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blueAccent,
@@ -813,97 +802,354 @@ class AboutPage extends StatelessWidget {
   }
 }
 
-class HistoryPage extends StatefulWidget {
-  const HistoryPage({super.key});
+// class HistoryPage extends StatefulWidget {
+//   const HistoryPage({super.key});
 
-  @override
-  State<HistoryPage> createState() => _HistoryPage();
-}
+//   @override
+//   State<HistoryPage> createState() => _HistoryPage();
+// }
 
-class _HistoryPage extends State<HistoryPage> {
-  // Sample data for the table
-  final List<Map<String, String>> tableData = [
+// class _HistoryPage extends State<HistoryPage> {
+//   // Sample data for the table
+//   final List<Map<String, String>> tableData = [
+//     {
+//       'starting': 'New York',
+//       'destination': 'Boston',
+//       'timeCost': '4h 30m',
+//       'staging': 'Direct',
+//     },
+//     {
+//       'starting': 'Chicago',
+//       'destination': 'Miami',
+//       'timeCost': '6h 15m',
+//       'staging': '1 Stop',
+//     },
+//     {
+//       'starting': 'Los Angeles',
+//       'destination': 'Seattle',
+//       'timeCost': '2h 45m',
+//       'staging': 'Direct',
+//     },
+//   ];
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return SingleChildScrollView(
+//       scrollDirection: Axis.horizontal,
+//       child: Container(
+//         width: MediaQuery.of(context).size.width, // Span full screen width
+//         child: DataTable(
+//           // Define column headers
+//           columns: const [
+//             DataColumn(
+//               label: Text(
+//                 'Starting',
+//                 style: TextStyle(fontWeight: FontWeight.bold),
+//               ),
+//             ),
+//             DataColumn(
+//               label: Text(
+//                 'Destination',
+//                 style: TextStyle(fontWeight: FontWeight.bold),
+//               ),
+//             ),
+//             DataColumn(
+//               label: Text(
+//                 'Time Cost',
+//                 style: TextStyle(fontWeight: FontWeight.bold),
+//               ),
+//             ),
+//             DataColumn(
+//               label: Text(
+//                 'Staging',
+//                 style: TextStyle(fontWeight: FontWeight.bold),
+//               ),
+//             ),
+//           ],
+//           // Define rows from sample data
+//           rows:
+//               tableData
+//                   .map(
+//                     (data) => DataRow(
+//                       cells: [
+//                         DataCell(Text(data['starting']!)),
+//                         DataCell(Text(data['destination']!)),
+//                         DataCell(Text(data['timeCost']!)),
+//                         DataCell(Text(data['staging']!)),
+//                       ],
+//                     ),
+//                   )
+//                   .toList(),
+//           // Optional styling
+//           columnSpacing: 20.0,
+//           dataRowHeight: 50.0,
+//           headingRowColor: MaterialStateProperty.all(Colors.blue[100]),
+//           border: TableBorder.all(color: Colors.grey, width: 1.0),
+//         ),
+//       ),
+//     );
+//   }
+// }
+// Route History Page
+class HistoryPage extends StatelessWidget {
+  final FavoritesModel favoritesModel;
+
+  HistoryPage({required this.favoritesModel});
+
+  // Mock data for route history
+  final List<Map<String, String>> routeHistory = [
     {
-      'starting': 'New York',
-      'destination': 'Boston',
-      'timeCost': '4h 30m',
-      'staging': 'Direct',
+      'name': 'Office Trip',
+      'destination': 'City Center',
+      'duration': '25 min',
+      'date': '2025-04-18',
     },
     {
-      'starting': 'Chicago',
-      'destination': 'Miami',
-      'timeCost': '6h 15m',
-      'staging': '1 Stop',
+      'name': 'Grocery Run',
+      'destination': 'Mall',
+      'duration': '15 min',
+      'date': '2025-04-17',
     },
     {
-      'starting': 'Los Angeles',
-      'destination': 'Seattle',
-      'timeCost': '2h 45m',
-      'staging': 'Direct',
+      'name': 'Evening Walk',
+      'destination': 'Park',
+      'duration': '40 min',
+      'date': '2025-04-16',
     },
   ];
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Container(
-        width: MediaQuery.of(context).size.width, // Span full screen width
-        child: DataTable(
-          // Define column headers
-          columns: const [
-            DataColumn(
-              label: Text(
-                'Starting',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                'Destination',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                'Time Cost',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                'Staging',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-          // Define rows from sample data
-          rows: tableData
-              .map(
-                (data) => DataRow(
-                  cells: [
-                    DataCell(Text(data['starting']!)),
-                    DataCell(Text(data['destination']!)),
-                    DataCell(Text(data['timeCost']!)),
-                    DataCell(Text(data['staging']!)),
-                  ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Route History'),
+        backgroundColor: Colors.orange[700],
+        elevation: 0,
+      ),
+      body:
+          routeHistory.isEmpty
+              ? Center(
+                child: Text(
+                  'No route history yet!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.red[700],
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               )
-              .toList(),
-          // Optional styling
-          columnSpacing: 20.0,
-          dataRowHeight: 50.0,
-          headingRowColor: MaterialStateProperty.all(Colors.blue[100]),
-          border: TableBorder.all(
-            color: Colors.grey,
-            width: 1.0,
+              : ListView.builder(
+                padding: EdgeInsets.all(16),
+                itemCount: routeHistory.length,
+                itemBuilder: (context, index) {
+                  final route = routeHistory[index];
+                  return HistoryRouteCard(
+                    route: route,
+                    index: index,
+                    favoritesModel: favoritesModel,
+                  );
+                },
+              ),
+    );
+  }
+}
+
+class HistoryRouteCard extends StatefulWidget {
+  final Map<String, String> route;
+  final int index;
+  final FavoritesModel favoritesModel;
+
+  HistoryRouteCard({
+    required this.route,
+    required this.index,
+    required this.favoritesModel,
+  });
+
+  @override
+  _HistoryRouteCardState createState() => _HistoryRouteCardState();
+}
+
+class _HistoryRouteCardState extends State<HistoryRouteCard> {
+  late bool isFavorite;
+
+  @override
+  void initState() {
+    super.initState();
+    isFavorite = widget.favoritesModel.isFavorite(widget.route['name']!);
+    widget.favoritesModel.addListener(_onFavoritesChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.favoritesModel.removeListener(_onFavoritesChanged);
+    super.dispose();
+  }
+
+  void _onFavoritesChanged() {
+    setState(() {
+      isFavorite = widget.favoritesModel.isFavorite(widget.route['name']!);
+    });
+  }
+
+  void toggleFavorite() {
+    if (isFavorite) {
+      widget.favoritesModel.removeFavorite(widget.route['name']!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${widget.route['name']} removed from favorites'),
+        ),
+      );
+    } else {
+      widget.favoritesModel.addFavorite(widget.route);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${widget.route['name']} added to favorites')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Timeline dot and line
+          Column(
+            children: [
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.redAccent,
+                ),
+              ),
+              Container(width: 2, height: 100, color: Colors.orange[300]),
+            ],
           ),
+          SizedBox(width: 16),
+          // Route details
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RouteDetailsPage(route: widget.route),
+                  ),
+                );
+              },
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.yellow[200]!, Colors.orange[300]!],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            widget.route['name']!,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[900],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: Colors.redAccent,
+                            ),
+                            onPressed: toggleFavorite,
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'To: ${widget.route['destination']}',
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                      Text(
+                        'Date: ${widget.route['date']}',
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                      Text(
+                        'Duration: ${widget.route['duration']}',
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Route Details Page (Placeholder)
+class RouteDetailsPage extends StatelessWidget {
+  final Map<String, String> route;
+
+  RouteDetailsPage({required this.route});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${route['name']} Details'),
+        backgroundColor: Colors.redAccent,
+      ),
+      body: Center(
+        child: Text(
+          'Details for ${route['name']} to ${route['destination']}',
+          style: TextStyle(fontSize: 18, color: Colors.black87),
         ),
       ),
     );
   }
 }
 
+// Favorites Model to manage favorite routes
+class FavoritesModel extends ChangeNotifier {
+  List<Map<String, String>> _favorites = [];
+
+  List<Map<String, String>> get favorites => _favorites;
+
+  void addFavorite(Map<String, String> route) {
+    if (!_favorites.any((r) => r['name'] == route['name'])) {
+      _favorites.add(Map.from(route));
+      notifyListeners();
+    }
+  }
+
+  void removeFavorite(String routeName) {
+    _favorites.removeWhere((r) => r['name'] == routeName);
+    notifyListeners();
+  }
+
+  bool isFavorite(String routeName) {
+    return _favorites.any((r) => r['name'] == routeName);
+  }
+}
 
 class FavoritePage extends StatelessWidget {
   const FavoritePage({super.key});
@@ -971,4 +1217,3 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
-
