@@ -14,6 +14,8 @@ class BigModel with ChangeNotifier {
 
   List<Map<String, String>> get favorites => _favorites;
 
+  List<List<Map<String, dynamic>>> staticPointsList = [];
+
   void updatePoint(double latitude, double longitude) {
     _point = GeoPoint(latitude: latitude, longitude: longitude);
     notifyListeners();
@@ -35,13 +37,27 @@ class BigModel with ChangeNotifier {
     return _favorites.any((r) => r['name'] == routeName);
   }
 
-  void visible() {
+  void showRouteDialog() {
     isDialogVisible = true;
     notifyListeners();
   }
 
-  void invisible() {
+  void hideRouteDialog() {
     isDialogVisible = false;
+    staticPointsList.clear();
+    notifyListeners();
+  }
+
+  void addStaticPoints(List<Map<String, dynamic>> new_static_points_list) {
+    staticPointsList.add(new_static_points_list);
+    notifyListeners();
+  }
+
+  void goBackStaticPoints() {
+    staticPointsList.removeLast();
+    if (staticPointsList.isEmpty) {
+      hideRouteDialog();
+    }
     notifyListeners();
   }
 }

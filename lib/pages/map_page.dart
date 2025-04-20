@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'dart:async';
 
+import 'package:test/pages/route_suggestion_dialog.dart';
+
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
 
@@ -116,7 +118,7 @@ class _MapPage extends State<MapPage> {
             isVisible: model.isDialogVisible,
             onClose: () {
               setState(() {
-                model.invisible();
+                model.hideRouteDialog();
               });
             },
           ),
@@ -502,9 +504,27 @@ class _PromptDialogState extends State<PromptDialog> {
 
               // Process successful response
               if (response.statusCode == 200) {
-                final results = json.decode(response.body);
+                final dynamic decodedJson = json.decode(response.body);
+                final List<dynamic> reachableSpList =
+                    decodedJson['reachable_sp'] as List? ?? [];
                 Navigator.of(context).pop();
-                model.visible();
+
+                // Convert each item to a strongly-typed Map<String, dynamic>
+                final List<Map<String, dynamic>> reachablePoints =
+                    reachableSpList
+                        .map(
+                          (item) => {
+                            'location':
+                                item['location'] as String, // Force String
+                            'time_required':
+                                (item['time_required'] as num)
+                                    .toInt(), // Force int
+                          },
+                        )
+                        .toList();
+                model.addStaticPoints(reachablePoints);
+
+                model.showRouteDialog();
 
                 // showDialog(
                 //   context: context,
@@ -622,111 +642,6 @@ class _PromptDialogState extends State<PromptDialog> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class RouteSuggestionDialog extends StatelessWidget {
-  // late BigModel model;
-  bool isVisible;
-  final VoidCallback onClose;
-
-  RouteSuggestionDialog({
-    Key? key,
-    required this.isVisible,
-    required this.onClose,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      left: isVisible ? 0 : -300,
-      top: 0,
-      bottom: 0,
-      width: 300,
-      child: Material(
-        elevation: 8,
-        color: Colors.white,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(2, 0),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Menu',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black54),
-                      onPressed: onClose,
-                    ),
-                  ],
-                ),
-              ),
-              // Scrollable Content
-              Expanded(
-                child: ListView.builder(
-                  itemCount: 20,
-                  itemBuilder: (context, index) {
-                    return _buildMenuItem(
-                      icon: Icons.category,
-                      title: 'Item ${index + 1}',
-                      onTap: () {},
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black54),
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 16, color: Colors.black87),
-      ),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      hoverColor: Colors.grey[100],
     );
   }
 }
