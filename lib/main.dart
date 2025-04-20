@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:test/pages/about_page.dart';
@@ -10,7 +11,11 @@ import 'package:test/geo_point.dart';
 import 'package:test/big_model.dart';
 
 //for debug
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+
   runApp(
     ChangeNotifierProvider(create: (context) => BigModel(), child: MyApp()),
   );
