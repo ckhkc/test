@@ -479,7 +479,7 @@ class _PromptDialogState extends State<PromptDialog> {
               // Create the HTTP request future
               final requestFuture = http.post(
                 Uri.parse(
-                  'http://10.0.2.2:5000/reachable_locations',
+                  'http://localhost:5000/reachable_locations',
                 ), // Use 10.0.2.2 for Android emulator
                 headers: {'Content-Type': 'application/json'},
                 body: json.encode(requestData),
@@ -503,6 +503,7 @@ class _PromptDialogState extends State<PromptDialog> {
               // Process successful response
               if (response.statusCode == 200) {
                 final results = json.decode(response.body);
+                Navigator.of(context).pop();
                 model.visible();
 
                 // showDialog(
