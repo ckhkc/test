@@ -1,16 +1,42 @@
-import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'package:routing_client_dart/routing_client_dart.dart' as routing;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:provider/provider.dart';
 
+// Class to hold coordinates
+class GeoPoint {
+  double latitude = 0;
+  double longitude = 0;
+
+  GeoPoint({required this.latitude, required this.longitude});
+
+  @override
+  String toString() => 'GeoPoint(latitude: $latitude, longitude: $longitude)';
+}
+
+// State management class
+class BigModel with ChangeNotifier {
+  GeoPoint _point = GeoPoint(latitude: 40.7128, longitude: -74.0060);
+
+  GeoPoint get point => _point;
+
+  void updatePoint(double latitude, double longitude) {
+    _point = GeoPoint(latitude: latitude, longitude: longitude);
+    notifyListeners();
+  }
+}
+//for debug
 void main() {
-  runApp(const MyApp());
+  runApp(
+  ChangeNotifierProvider(
+      create: (context) => BigModel(),
+     child: MyApp(),
+      ),
+    );
 }
 
 class MyApp extends StatelessWidget {
@@ -19,41 +45,540 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Two-Page Prompt with OSM Demo',
+      title: 'Wanderlust Itinerary Planner',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: Colors.teal,
+        scaffoldBackgroundColor: Colors.white,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        textTheme: TextTheme(
+          headlineSmall: TextStyle(
+              fontSize: 28, fontWeight: FontWeight.bold, color: Colors.teal[900]),
+          bodyMedium: TextStyle(fontSize: 16, color: Colors.grey[800]),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal[700],
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
       ),
-      home: const HomePage(),
+      // home: LoginPage(),
+      home: MapPage(),
     );
   }
 }
 
-// Home Page: Contains a button to trigger the pop-up dialog
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void _login() {
+    if (_formKey.currentState!.validate()) {
+      // Placeholder for authentication logic
+      String email = _emailController.text;
+      String password = _passwordController.text;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logging in with $email...')),
+      );
+      Future.delayed(const Duration(seconds: 1));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+      // TODO: Implement real authentication (e.g., Firebase, API call)
+      // Example: Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardPage()));
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Show the pop-up dialog when the button is pressed
-            showDialog(
-              context: context,
-              builder: (context) => const FirstPageDialog(),
-            );
-          },
-          child: const Text('Start Prompt'),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.teal[200]!, Colors.teal[700]!],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App Logo/Title
+                    Text(
+                      'Wanderlust Planner',
+                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                            color: Colors.white,
+                            letterSpacing: 1.5,
+                          ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Plan Your Next Adventure!',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white70,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    SizedBox(height: 48),
+                    // Email Field
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: Icon(Icons.email, color: Colors.white70),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      style: TextStyle(color: Colors.white),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    // Password Field
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: Icon(Icons.lock, color: Colors.white70),
+                      ),
+                      obscureText: true,
+                      style: TextStyle(color: Colors.white),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 24),
+                    // Login Button
+                    ElevatedButton(
+                      onPressed: _login,
+                      child: Text('Login'),
+                    ),
+                    SizedBox(height: 16),
+                    // Sign Up Link
+                    TextButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Sign Up feature coming soon!')),
+                        );
+                        // TODO: Navigate to sign-up page
+                      },
+                      child: Text(
+                        'Don\'t have an account? Sign Up',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Top Navigation App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true, // For modern Material Design
+      ),
+      home: const MainNavigationPage(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class MainNavigationPage extends StatefulWidget {
+  const MainNavigationPage({super.key});
+
+  @override
+  State<MainNavigationPage> createState() => _MainNavigationPageState();
+}
+
+class _MainNavigationPageState extends State<MainNavigationPage> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = [
+    MapPage(),
+    const AboutPage(),
+    const HistoryPage(),
+    const FavoritePage(),
+    const SettingsPage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Top Navigation App'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            color: Colors.blue.shade800,
+            child: Row(
+              children: [
+                _buildNavButton(0, Icons.home, 'Home'),
+                _buildNavButton(1, Icons.info, 'About'),
+                _buildNavButton(2, Icons.history, 'History'),
+                _buildNavButton(3, Icons.favorite, 'Favorite'),
+                _buildNavButton(4, Icons.settings, 'Settings'),
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: _pages[_currentIndex],
+    );
+  }
+
+  Widget _buildNavButton(int index, IconData icon, String label) {
+    return Expanded(
+      child: Material(
+        color:
+            _currentIndex == index ? Colors.blue.shade600 : Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: Colors.white),
+                const SizedBox(height: 4),
+                Text(label, style: const TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MapPage extends StatefulWidget{
+  const MapPage({super.key});
+  
+  @override
+  State<MapPage> createState() => _MapPage();
+}
+
+class _MapPage extends State<MapPage>{
+  final MapController _mapController = MapController();
+  final GeoPoint point = GeoPoint(latitude: 0, longitude: 0);
+  @override
+
+  Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
+    return Scaffold(
+      appBar: AppBar(
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.blue,
+        toolbarHeight: 40,
+        actions: [
+            IconButton(
+              icon: Icon(Icons.search),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const LocationDialog(),
+                );
+              },
+              tooltip: 'Search',
+            ),
+            IconButton(
+              icon: Icon(Icons.settings),
+              onPressed: () {
+                print('Settings button pressed');
+              },
+              tooltip: 'Settings',
+            ),
+            TextButton(
+              onPressed: () {
+                print('Text button pressed');
+              },
+              child: Text(
+                'Action',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+
+      ),
+      body: Stack(
+        children: [
+          
+          FlutterMap(
+            mapController: _mapController,
+              options: MapOptions(
+                initialCenter: LatLng(22.2700000, 114.1750000),
+                initialZoom: 14,
+              ),
+            children: [
+              TileLayer(
+                // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
+                // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
+                // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
+                userAgentPackageName: 'com.example.app', // Required for OSM usage policy
+              ),
+              MarkerLayer(markers: [
+                Marker(
+                  // point: LatLng(point.latitude, point.longitude),
+                  point: LatLng(model.point.latitude, model.point.longitude),
+                  width: 60,
+                  height: 60,
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    Icons.location_pin,
+                    size: 30,
+                    color: Colors.red,
+                  )
+                )
+              ]
+              ),
+            ],
+          ),
+          Positioned(
+                left: 0,
+                right: 0,
+                bottom: 16,
+                child: Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.8, // 80% of screen width
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Get Started pressed!')),
+                          
+                        );
+                        print(point);
+                        showDialog(
+                          context: context,
+                          builder: (context) => const FirstPageDialog(),
+                        );
+                      },
+                      child: Text('Get Started'),
+                    ),
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+class LocationScreen extends StatefulWidget {
+  const LocationScreen({super.key});
+
+  @override
+  _LocationScreenState createState() => _LocationScreenState();
+}
+class _LocationScreenState extends State<LocationScreen> {
+  GeoPoint? _coordinates;
+
+  Future<void> _openLocationDialog(BuildContext context) async {
+    final result = await showDialog<GeoPoint>(
+      context: context,
+      builder: (context) => const LocationDialog(),
+    );
+
+    if (result != null) {
+      setState(() {
+        _coordinates = result;
+      });
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Coordinates stored: $_coordinates')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Location Coordinates Finder'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => _openLocationDialog(context),
+              child: const Text('Find Coordinates'),
+              
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _coordinates == null
+                  ? 'No coordinates stored'
+                  : 'Stored: $_coordinates',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class LocationDialog extends StatefulWidget {
+  const LocationDialog({super.key});
+
+  @override
+  _LocationDialogState createState() => _LocationDialogState();
+}
+
+class _LocationDialogState extends State<LocationDialog> {
+  final TextEditingController _locationController = TextEditingController();
+
+  // Function to query coordinates from Nominatim API
+  Future<void> _searchLocation(String location) async {
+    final model = Provider.of<BigModel>(context);
+    if (location.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a location')),
+      );
+      return;
+    }
+
+    final url = Uri.parse(
+      'https://nominatim.openstreetmap.org/search?q=$location&format=json&limit=1',
+    );
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {'User-Agent': 'FlutterLocationApp/1.0'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data.isNotEmpty) {
+          final lat = double.parse(data[0]['lat']);
+          final lon = double.parse(data[0]['lon']);
+          // Return coordinates and close dialog
+          Navigator.of(context).pop(GeoPoint(latitude: lat, longitude: lon));
+          model.updatePoint(lat, lon);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location not found')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error fetching location')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
+    return AlertDialog(
+      title: const Text('Find Location Coordinates'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _locationController,
+              decoration: const InputDecoration(
+                hintText: 'Enter location (e.g., Paris)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () =>  {
+                _searchLocation(_locationController.text),
+              },
+              child: const Text('Search'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
+}
 // First Page Dialog: Pop-up dialog to prompt for the user's name and a number
 class FirstPageDialog extends StatefulWidget {
   const FirstPageDialog({super.key});
@@ -78,52 +603,112 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Prompt'),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20), // Rounded corners for a modern look
+      ),
+      backgroundColor: Colors.white, // Clean background
+      title: Row(
+        children: [
+          Icon(
+            Icons.map_rounded,
+            color: Colors.blueAccent,
+            size: 30,
+          ),
+          const SizedBox(width: 10),
+          const Text(
+            'Plan Your Adventure',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
+              fontSize: 22,
+            ),
+          ),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Please enter your name:',
-              style: TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Name',
+            Text(
+              'Welcome, Traveler! Let’s start planning your itinerary.',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[700],
+                fontStyle: FontStyle.italic,
               ),
             ),
             const SizedBox(height: 20),
+            // Name Input
             const Text(
-              'How many destinations do you want to enter?',
-              style: TextStyle(fontSize: 20),
+              'Where are you now?',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                labelText: 'location',
+                prefixIcon: Icon(Icons.location_city, color: Colors.blueAccent),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
             ),
             const SizedBox(height: 20),
+            // Number of Destinations Input
+            const Text(
+              'What is your destination?',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
             TextField(
               controller: _numberController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Number of Destinations',
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                labelText: 'Destination',
+                prefixIcon: Icon(Icons.place, color: Colors.blueAccent),
+                filled: true,
+                fillColor: Colors.grey[100],
               ),
             ),
             const SizedBox(height: 20),
+            // Time Input
             const Text(
-              'How much time do you have?',
-              style: TextStyle(fontSize: 20),
+              'How much time do you have for your trip?',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             TextField(
               controller: _timeController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'In mintues',
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                labelText: 'Time (in minutes)',
+                prefixIcon: Icon(Icons.timer, color: Colors.blueAccent),
+                filled: true,
+                fillColor: Colors.grey[100],
               ),
             ),
-            
           ],
         ),
       ),
@@ -132,15 +717,24 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
           onPressed: () {
             Navigator.of(context).pop(); // Close the dialog
           },
-          child: const Text('Cancel'),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 16,
+            ),
+          ),
         ),
-        TextButton(
+        ElevatedButton(
           onPressed: () {
             if (_nameController.text.isEmpty ||
-                _numberController.text.isEmpty) {
+                _numberController.text.isEmpty ||
+                _timeController.text.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text('Please enter both your name and a number')),
+                  content: Text('Please fill in all fields to continue.'),
+                  backgroundColor: Colors.redAccent,
+                ),
               );
               return;
             }
@@ -149,7 +743,9 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
             if (numberOfFields == null || numberOfFields <= 0) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text('Please enter a valid positive number')),
+                  content: Text('Please enter a valid positive number of destinations.'),
+                  backgroundColor: Colors.redAccent,
+                ),
               );
               return;
             }
@@ -157,1143 +753,222 @@ class _FirstPageDialogState extends State<FirstPageDialog> {
             // Close the dialog
             Navigator.of(context).pop();
 
-            // Navigate to the second page and pass the name and number
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SecondPage(
-                  name: _nameController.text,
-                  numberOfFields: numberOfFields,
-                ),
-              ),
-            );
+            // // Navigate to the second page and pass the name, number, and time
+            // Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) => SecondPage(
+            //       name: _nameController.text,
+            //       numberOfFields: numberOfFields,
+            //       time: int.tryParse(_timeController.text) ?? 0,
+            //     ),
+            //   ),
+            // );
           },
-          child: const Text('Next'),
-        ),
-      ],
-    );
-  }
-}
-
-// Second Page: Dynamically generate text fields for destinations
-class SecondPage extends StatefulWidget {
-  final String name;
-  final int numberOfFields;
-
-  const SecondPage({super.key, required this.name, required this.numberOfFields});
-
-  @override
-  State<SecondPage> createState() => _SecondPageState();
-}
-
-class _SecondPageState extends State<SecondPage> {
-  late List<TextEditingController> _controllers;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize a list of controllers based on the number of fields
-    _controllers = List.generate(
-      widget.numberOfFields,
-      (index) => TextEditingController(),
-    );
-  }
-
-  @override
-  void dispose() {
-    // Dispose of all controllers
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Enter Destinations'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Hello, ${widget.name}!',
-                style: const TextStyle(fontSize: 20),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Please enter your destinations:',
-                style: TextStyle(fontSize: 20),
-              ),
-              const SizedBox(height: 20),
-              // Dynamically generate text fields for destinations
-              ...List.generate(widget.numberOfFields, (index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: TextField(
-                    controller: _controllers[index],
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: 'Destination ${index + 1}',
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  // Check if any field is empty
-                  bool allFieldsFilled = _controllers.every((controller) => controller.text.isNotEmpty);
-                  if (!allFieldsFilled) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please fill in all destinations')),
-                    );
-                    return;
-                  }
-
-                  // Collect all the destination values
-                  List<String> destinations = _controllers.map((controller) => controller.text).toList();
-
-                  // Navigate to the map page with the destinations
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      // builder: (context) => MapPage(
-                      //   name: widget.name,
-                      //   destinations: destinations,
-                      // ),
-                      builder: (context) => OldMainExample()
-                    ),
-                  );
-                },
-                child: const Text('Show on Map'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class OldMainExample extends StatefulWidget {
-  const OldMainExample({super.key});
-
-  @override
-  State<OldMainExample> createState() => _MainExampleState();
-}
-
-class _MainExampleState extends State<OldMainExample>
-    with OSMMixinObserver, TickerProviderStateMixin {
-  final fm.MapController _mapController = fm.MapController();
-  late MapController controller;
-  late GlobalKey<ScaffoldState> scaffoldKey;
-  Key mapGlobalkey = UniqueKey();
-  ValueNotifier<bool> zoomNotifierActivation = ValueNotifier(false);
-  ValueNotifier<bool> visibilityZoomNotifierActivation = ValueNotifier(false);
-  ValueNotifier<bool> visibilityOSMLayers = ValueNotifier(false);
-  ValueNotifier<double> positionOSMLayers = ValueNotifier(-200);
-  ValueNotifier<GeoPoint?> centerMap = ValueNotifier(null);
-  ValueNotifier<bool> trackingNotifier = ValueNotifier(false);
-  ValueNotifier<bool> showFab = ValueNotifier(true);
-  ValueNotifier<GeoPoint?> lastGeoPoint = ValueNotifier(null);
-  ValueNotifier<bool> beginDrawRoad = ValueNotifier(false);
-  List<GeoPoint> pointsRoad = [];
-  late final manager = routing.OSRMManager();
-  Timer? timer;
-  int x = 0;
-  late AnimationController animationController;
-  late Animation<double> animation =
-      Tween<double>(begin: 0, end: 2 * pi).animate(animationController);
-  final ValueNotifier<int> mapRotate = ValueNotifier(0);
-  @override
-  void initState() {
-    super.initState();
-    // controller = MapController.withUserPosition(
-    //     trackUserLocation: UserTrackingOption(
-    //   enableTracking: true,
-    //   unFollowUser: false,
-    // )
-    controller = MapController.withPosition(
-      initPosition: GeoPoint(
-        latitude: 47.4358055,
-        longitude: 8.4737324,
-      ),
-      // areaLimit: BoundingBox(
-      //   east: 10.4922941,
-      //   north: 47.8084648,
-      //   south: 45.817995,
-      //   west: 5.9559113,
-      // ),
-    );
-    //  controller = MapController.cyclOSMLayer(
-
-    //   initPosition: GeoPoint(
-    //     latitude: 47.4358055,
-    //     longitude: 8.4737324,
-    //   ),
-    // areaLimit: BoundingBox(
-    //   east: 10.4922941,
-    //   north: 47.8084648,
-    //   south: 45.817995,
-    //   west: 5.9559113,
-    // ),
-    //);
-    //  controller = MapController.publicTransportationLayer(
-    //   initMapWithUserPosition: false,
-    //   initPosition: GeoPoint(
-    //     latitude: 47.4358055,
-    //     longitude: 8.4737324,
-    //   ),
-    // );
-
-    /*  controller = MapController.customLayer(
-      initMapWithUserPosition: false,
-      initPosition: GeoPoint(
-        latitude: 47.4358055,
-        longitude: 8.4737324,
-      ),
-      customTile: CustomTile(
-        sourceName: "outdoors",
-        tileExtension: ".png",
-        minZoomLevel: 2,
-        maxZoomLevel: 19,
-        urlsServers: [
-          TileURLs(
-            url: "https://tile.thunderforest.com/outdoors/",
-          )
-        ],
-        tileSize: 256,
-        keyApi: MapEntry(
-          "apikey",
-          dotenv.env['api']!,
-        ),
-      ),
-    ); */
-    // controller = MapController.customLayer(
-    //   //initPosition: initPosition,
-    //   initMapWithUserPosition: UserTrackingOption(),
-    //   customTile: CustomTile(
-    //     urlsServers: [
-    //       TileURLs(url: "https://tile.openstreetmap.de/"),
-    //     ],
-    //     tileExtension: ".png",
-    //     sourceName: "osmGermany",
-    //     maxZoomLevel: 20,
-    //   ),
-    // );
-    /* controller = MapController.customLayer(
-      initMapWithUserPosition: false,
-      initPosition: GeoPoint(
-        latitude: 47.4358055,
-        longitude: 8.4737324,
-      ),
-      customTile: CustomTile(
-        sourceName: "opentopomap",
-        tileExtension: ".png",
-        minZoomLevel: 2,
-        maxZoomLevel: 19,
-        urlsServers: [
-          "https://a.tile.opentopomap.org/",
-          "https://b.tile.opentopomap.org/",
-          "https://c.tile.opentopomap.org/",
-        ],
-        tileSize: 256,
-      ),
-    );*/
-    controller.addObserver(this);
-    scaffoldKey = GlobalKey<ScaffoldState>();
-    controller.listenerMapLongTapping.addListener(() async {
-      if (controller.listenerMapLongTapping.value != null) {
-        await controller.moveTo(controller.listenerMapLongTapping.value!);
-        /* await controller.addMarker(
-          controller.listenerMapLongTapping.value!,
-          markerIcon: MarkerIcon(
-            iconWidget: SizedBox.fromSize(
-              size: Size.square(32),
-              child: Stack(
-                children: [
-                  Icon(
-                    Icons.store,
-                    color: Colors.brown,
-                    size: 32,
-                  ),
-                  Text(
-                    randNum,
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
-          //angle: pi / 3,
-        );*/
-      }
-    });
-    controller.listenerMapSingleTapping.addListener(() async {
-      if (controller.listenerMapSingleTapping.value != null) {
-        debugPrint(controller.listenerMapSingleTapping.value.toString());
-        if (beginDrawRoad.value) {
-          pointsRoad.add(controller.listenerMapSingleTapping.value!);
-
-          await controller.addMarker(
-            controller.listenerMapSingleTapping.value!,
-            markerIcon: const MarkerIcon(
-              icon: Icon(
-                Icons.person_pin_circle,
-                color: Colors.amber,
-                size: 48,
-              ),
-            ),
-          );
-          if (pointsRoad.length >= 2 && showFab.value && mounted) {
-            roadActionBt(context);
-          }
-        } else if (lastGeoPoint.value != null) {
-          await controller.changeLocationMarker(
-            oldLocation: lastGeoPoint.value!,
-            newLocation: controller.listenerMapSingleTapping.value!,
-          );
-
-          lastGeoPoint.value = controller.listenerMapSingleTapping.value;
-        } else {
-          await controller.addMarker(
-            controller.listenerMapSingleTapping.value!,
-            markerIcon: const MarkerIcon(
-              icon: Icon(
-                Icons.person_pin,
-                color: Colors.red,
-                size: 48,
-              ),
-              // assetMarker: AssetMarker(
-              //   image: AssetImage("asset/pin.png"),
-              // ),
-              // assetMarker: AssetMarker(
-              //   image: AssetImage("asset/pin.png"),
-              //   //scaleAssetImage: 2,
-              // ),
-            ),
-            iconAnchor: IconAnchor(
-              anchor: Anchor.top,
-              //offset: (x: 32.5, y: -32),
-            ),
-            //angle: -pi / 4,
-          );
-          lastGeoPoint.value = controller.listenerMapSingleTapping.value;
-        }
-      }
-    });
-    controller.listenerRegionIsChanging.addListener(() async {
-      if (controller.listenerRegionIsChanging.value != null) {
-        centerMap.value = controller.listenerRegionIsChanging.value!.center;
-      }
-    });
-    animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        milliseconds: 500,
-      ),
-    );
-    //controller.listenerMapIsReady.addListener(mapIsInitialized);
-  }
-
-  Future<void> mapIsInitialized() async {
-    await controller.setZoom(zoomLevel: 12);
-    // await controller.setMarkerOfStaticPoint(
-    //   id: "line 1",
-    //   markerIcon: MarkerIcon(
-    //     icon: Icon(
-    //       Icons.train,
-    //       color: Colors.red,
-    //       size: 48,
-    //     ),
-    //   ),
-    // );
-    await controller.setMarkerOfStaticPoint(
-      id: "line 2",
-      markerIcon: const MarkerIcon(
-        icon: Icon(
-          Icons.train,
-          color: Colors.orange,
-          size: 36,
-        ),
-      ),
-    );
-
-    await controller.setStaticPosition(
-      [
-        GeoPointWithOrientation.radian(
-          latitude: 47.4433594,
-          longitude: 8.4680184,
-          radianAngle: pi / 4,
-        ),
-        GeoPointWithOrientation.radian(
-          latitude: 47.4517782,
-          longitude: 8.4716146,
-          radianAngle: pi / 2,
-        ),
-      ],
-      "line 2",
-    );
-
-    // Future.delayed(Duration(seconds: 5), () {
-    //   controller.changeTileLayer(tileLayer: CustomTile.cycleOSM());
-    // });
-  }
-
-  @override
-  Future<void> mapIsReady(bool isReady) async {
-    if (isReady) {
-      await mapIsInitialized();
-    }
-  }
-
-  @override
-  void onRoadTap(RoadInfo road) {
-    super.onRoadTap(road);
-    debugPrint("road:$road");
-    Future.microtask(() => controller.removeRoad(roadKey: road.key));
-  }
-
-  @override
-  void dispose() {
-    if (timer != null && timer!.isActive) {
-      timer?.cancel();
-    }
-    //controller.listenerMapIsReady.removeListener(mapIsInitialized);
-    animationController.dispose();
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Text('OSM'),
-        leading: IconButton(
-          onPressed: () async {
-            Navigator.pop(context); //, '/home');
-          },
-          icon: const Icon(Icons.arrow_back),
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.layers),
-            onPressed: () async {
-              if (visibilityOSMLayers.value) {
-                positionOSMLayers.value = -200;
-                await Future.delayed(const Duration(milliseconds: 700));
-              }
-              visibilityOSMLayers.value = !visibilityOSMLayers.value;
-              showFab.value = !visibilityOSMLayers.value;
-              Future.delayed(const Duration(milliseconds: 500), () {
-                positionOSMLayers.value = visibilityOSMLayers.value ? 32 : -200;
-              });
-            },
-          ),
-          Builder(builder: (ctx) {
-            return GestureDetector(
-              onLongPress: () => drawMultiRoads(),
-              onDoubleTap: () async {
-                await controller.clearAllRoads();
-              },
-              child: IconButton(
-                onPressed: () {
-                  beginDrawRoad.value = true;
-                },
-                icon: const Icon(Icons.route),
-              ),
-            );
-          }),
-          IconButton(
-            onPressed: () async {
-              await drawRoadManually();
-            },
-            icon: const Icon(Icons.alt_route),
-          ),
-          IconButton(
-            onPressed: () async {
-              visibilityZoomNotifierActivation.value =
-                  !visibilityZoomNotifierActivation.value;
-              zoomNotifierActivation.value = !zoomNotifierActivation.value;
-            },
-            icon: const Icon(Icons.zoom_out_map),
-          ),
-          IconButton(
-            onPressed: () async {
-              await Navigator.pushNamed(context, "/picker-result");
-            },
-            icon: const Icon(Icons.search),
-          ),
-          IconButton(
-            onPressed: () async {
-              await controller.toggleLayersVisibility();
-            },
-            icon: const Icon(Icons.location_on),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          // OSMFlutter(
-          //   controller: controller,
-          //   osmOption: OSMOption(
-          //     enableRotationByGesture: true,
-          //     zoomOption: const ZoomOption(
-          //       initZoom: 8,
-          //       minZoomLevel: 3,
-          //       maxZoomLevel: 19,
-          //       stepZoom: 1.0,
-          //     ),
-          //     userLocationMarker: UserLocationMaker(
-          //         personMarker: MarkerIcon(
-          //           // icon: Icon(
-          //           //   Icons.car_crash_sharp,
-          //           //   color: Colors.red,
-          //           //   size: 48,
-          //           // ),
-          //           // iconWidget: SizedBox.square(
-          //           //   dimension: 56,
-          //           //   child: Image.asset(
-          //           //     "asset/taxi.png",
-          //           //     scale: .3,
-          //           //   ),
-          //           // ),
-          //           iconWidget: SizedBox(
-          //             width: 32,
-          //             height: 64,
-          //             child: Image.asset(
-          //               "asset/directionIcon.png",
-          //               scale: .3,
-          //             ),
-          //           ),
-          //           // assetMarker: AssetMarker(
-          //           //   image: AssetImage(
-          //           //     "asset/taxi.png",
-          //           //   ),
-          //           //   scaleAssetImage: 0.3,
-          //           // ),
-          //         ),
-          //         directionArrowMarker: MarkerIcon(
-          //           // icon: Icon(
-          //           //   Icons.navigation_rounded,
-          //           //   size: 48,
-          //           // ),
-          //           iconWidget: SizedBox(
-          //             width: 32,
-          //             height: 64,
-          //             child: Image.asset(
-          //               "asset/directionIcon.png",
-          //               scale: .3,
-          //             ),
-          //           ),
-          //         )
-          //         // directionArrowMarker: MarkerIcon(
-          //         //   assetMarker: AssetMarker(
-          //         //     image: AssetImage(
-          //         //       "asset/taxi.png",
-          //         //     ),
-          //         //     scaleAssetImage: 0.25,
-          //         //   ),
-          //         // ),
-          //         ),
-          //     staticPoints: [
-          //       StaticPositionGeoPoint(
-          //         "line 1",
-          //         const MarkerIcon(
-          //           icon: Icon(
-          //             Icons.train,
-          //             color: Colors.green,
-          //             size: 32,
-          //           ),
-          //         ),
-          //         [
-          //           GeoPoint(
-          //             latitude: 47.4333594,
-          //             longitude: 8.4680184,
-          //           ),
-          //           GeoPoint(
-          //             latitude: 47.4317782,
-          //             longitude: 8.4716146,
-          //           ),
-          //         ],
-          //       ),
-          //       /*StaticPositionGeoPoint(
-          //             "line 2",
-          //             MarkerIcon(
-          //               icon: Icon(
-          //                 Icons.train,
-          //                 color: Colors.red,
-          //                 size: 48,
-          //               ),
-          //             ),
-          //             [
-          //               GeoPoint(latitude: 47.4433594, longitude: 8.4680184),
-          //               GeoPoint(latitude: 47.4517782, longitude: 8.4716146),
-          //             ],
-          //           )*/
-          //     ],
-          //     roadConfiguration: const RoadOption(
-          //       roadColor: Colors.blueAccent,
-          //     ),
-          //     showContributorBadgeForOSM: true,
-          //     //trackMyPosition: trackingNotifier.value,
-          //     showDefaultInfoWindow: false,
-          //   ),
-          //   mapIsLoading: const Center(
-          //     child: Column(
-          //       mainAxisSize: MainAxisSize.min,
-          //       mainAxisAlignment: MainAxisAlignment.center,
-          //       crossAxisAlignment: CrossAxisAlignment.center,
-          //       children: [
-          //         CircularProgressIndicator(),
-          //         Text("Map is Loading.."),
-          //       ],
-          //     ),
-          //   ),
-          //   onMapIsReady: (isReady) {
-          //     if (isReady) {
-          //       debugPrint("map is ready");
-          //     }
-          //   },
-          //   onLocationChanged: (myLocation) {
-          //     debugPrint('user location :$myLocation');
-          //   },
-          //   onGeoPointClicked: (geoPoint) async {
-          //     if (geoPoint ==
-          //         GeoPoint(
-          //           latitude: 47.442475,
-          //           longitude: 8.4680389,
-          //         )) {
-          //       final newGeoPoint = GeoPoint(
-          //         latitude: 47.4517782,
-          //         longitude: 8.4716146,
-          //       );
-          //       await controller.changeLocationMarker(
-          //         oldLocation: geoPoint,
-          //         newLocation: newGeoPoint,
-          //         markerIcon: const MarkerIcon(
-          //           icon: Icon(
-          //             Icons.bus_alert,
-          //             color: Colors.blue,
-          //             size: 24,
-          //           ),
-          //         ),
-          //       );
-          //     }
-          //     if (!context.mounted) return;
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       SnackBar(
-          //         content: Text(
-          //           geoPoint.toMap().toString(),
-          //         ),
-          //         action: SnackBarAction(
-          //           onPressed: () =>
-          //               ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-          //           label: "hide",
-          //         ),
-          //       ),
-          //     );
-          //   },
-          // ),
-          // Positioned(
-          //   bottom: 10,
-          //   left: 10,
-          //   child: ValueListenableBuilder<bool>(
-          //     valueListenable: visibilityZoomNotifierActivation,
-          //     builder: (ctx, visibility, child) {
-          //       return Visibility(
-          //         visible: visibility,
-          //         child: child!,
-          //       );
-          //     },
-          //     child: ValueListenableBuilder<bool>(
-          //       valueListenable: zoomNotifierActivation,
-          //       builder: (ctx, isVisible, child) {
-          //         return AnimatedOpacity(
-          //           opacity: isVisible ? 1.0 : 0.0,
-          //           onEnd: () {
-          //             visibilityZoomNotifierActivation.value = isVisible;
-          //           },
-          //           duration: const Duration(milliseconds: 500),
-          //           child: child,
-          //         );
-          //       },
-          //       child: Column(
-          //         children: [
-          //           ElevatedButton(
-          //             child: const Icon(Icons.add),
-          //             onPressed: () async {
-          //               controller.zoomIn();
-          //             },
-          //           ),
-          //           const SizedBox(
-          //             height: 16,
-          //           ),
-          //           ElevatedButton(
-          //             child: const Icon(Icons.remove),
-          //             onPressed: () async {
-          //               controller.zoomOut();
-          //             },
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          // ValueListenableBuilder<bool>(
-          //   valueListenable: visibilityOSMLayers,
-          //   builder: (ctx, isVisible, child) {
-          //     if (!isVisible) {
-          //       return const SizedBox.shrink();
-          //     }
-          //     return child!;
-          //   },
-          //   child: ValueListenableBuilder<double>(
-          //     valueListenable: positionOSMLayers,
-          //     builder: (ctx, position, child) {
-          //       return AnimatedPositioned(
-          //         bottom: position,
-          //         left: 24,
-          //         right: 24,
-          //         duration: const Duration(milliseconds: 500),
-          //         child: OSMLayersChoiceWidget(
-          //           centerPoint: centerMap.value!,
-          //           setLayerCallback: (tile) async {
-          //             await controller.changeTileLayer(tileLayer: tile);
-          //           },
-          //         ),
-          //       );
-          //     },
-          //   ),
-          // ),
-          // if (!kIsWeb) ...[
-          //   Positioned(
-          //     top: 5,
-          //     right: 12,
-          //     child: FloatingActionButton(
-          //       key: UniqueKey(),
-          //       heroTag: "rotateCamera",
-          //       onPressed: () async {
-          //         animationController.forward().then((value) {
-          //           animationController.reset();
-          //         });
-          //         mapRotate.value = 0;
-          //         await controller.rotateMapCamera(mapRotate.value.toDouble());
-          //       },
-          //       child: AnimatedBuilder(
-          //         animation: animation,
-          //         builder: (context, child) {
-          //           return Transform.rotate(
-          //             angle: animation.value,
-          //             child: child!,
-          //           );
-          //         },
-          //         child: const Icon(Icons.screen_rotation_alt_outlined),
-          //       ),
-          //     ),
-          //   ),
-          // ],
-          fm.FlutterMap(
-            mapController: _mapController,
-              options: fm.MapOptions(
-                initialCenter: LatLng(22.2700000, 114.1750000),
-                initialZoom: 14,
-              ),
-            children: [
-              fm.TileLayer(
-                // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
-                // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
-                // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
-                userAgentPackageName: 'com.example.app', // Required for OSM usage policy
-              ),
-            ],
-          ),
-        ],
-      ),
-      floatingActionButton: ValueListenableBuilder<bool>(
-        valueListenable: showFab,
-        builder: (ctx, isShow, child) {
-          if (!isShow) {
-            return const SizedBox.shrink();
-          }
-          return child!;
-        },
-        child: PointerInterceptor(
-          child: FloatingActionButton(
-            key: UniqueKey(),
-            heroTag: "locationUser",
-            onPressed: () async {
-              if (!trackingNotifier.value) {
-                await controller.currentLocation();
-                await controller.enableTracking(
-                  enableStopFollow: true,
-                  disableUserMarkerRotation: false,
-                  anchor: Anchor.left,
-                );
-                //await controller.zoom(5.0);
-              } else {
-                await controller.disabledTracking();
-              }
-              trackingNotifier.value = !trackingNotifier.value;
-            },
-            child: ValueListenableBuilder<bool>(
-              valueListenable: trackingNotifier,
-              builder: (ctx, isTracking, _) {
-                if (isTracking) {
-                  return const Icon(Icons.gps_off_sharp);
-                }
-                return const Icon(Icons.my_location);
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void roadActionBt(BuildContext ctx) async {
-    try {
-      ///selection geoPoint
-
-      showFab.value = false;
-      ValueNotifier<RoadType> notifierRoadType = ValueNotifier(RoadType.car);
-
-      final bottomPersistant = scaffoldKey.currentState!.showBottomSheet(
-        (ctx) {
-          return PointerInterceptor(
-            child: RoadTypeChoiceWidget(
-              setValueCallback: (roadType) {
-                notifierRoadType.value = roadType;
-              },
-            ),
-          );
-        },
-        backgroundColor: Colors.transparent,
-        elevation: 0.0,
-      );
-      await bottomPersistant.closed.then((roadType) async {
-        showFab.value = true;
-        beginDrawRoad.value = false;
-        /* final road = await manager.getRoad(
-            waypoints: [pointsRoad.first, pointsRoad.last]
-                .map(
-                  (e) => routing.LngLat(
-                    lat: e.latitude,
-                    lng: e.longitude,
-                  ),
-                )
-                .toList());
-        final lnglats = road.polyline
-                ?.map(
-                  (e) => GeoPoint(
-                    latitude: e.lat,
-                    longitude: e.lng,
-                  ),
-                )
-                .toList() ??
-            <GeoPoint>[];
-        await controller.drawRoadManually(
-          lnglats,
-          RoadOption(
-            roadWidth: 20,
-            roadColor: Colors.red,
-            zoomInto: true,
-            roadBorderWidth: 30,
-            roadBorderColor: Colors.green,
-          ),
-        );*/
-        RoadInfo roadInformation = await controller.drawRoad(
-          pointsRoad.first,
-          pointsRoad.last,
-          roadType: notifierRoadType.value,
-          intersectPoint:
-              pointsRoad.getRange(1, pointsRoad.length - 1).toList(),
-          roadOption: const RoadOption(
-            roadWidth: 15,
-            roadColor: Colors.red,
-            zoomInto: true,
-            roadBorderWidth: 10.0,
-            roadBorderColor: Colors.green,
-            isDotted: true,
-          ),
-        );
-        pointsRoad.clear();
-        debugPrint(
-            "app duration:${Duration(seconds: roadInformation.duration!.toInt()).inMinutes}");
-        debugPrint("app distance:${roadInformation.distance}Km");
-        debugPrint("app road:$roadInformation");
-        final console = roadInformation.instructions
-            .map((e) => e.toString())
-            .reduce(
-              (value, element) => "$value -> \n $element",
-            )
-            .toString();
-        debugPrint(
-          console,
-          wrapWidth: console.length,
-        );
-        // final box = await BoundingBox.fromGeoPointsAsync([point2, point]);
-        // controller.zoomToBoundingBox(
-        //   box,
-        //   paddinInPixel: 64,
-        // );
-      });
-    } on RoadException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "${e.errorMessage()}",
-          ),
-        ),
-      );
-    }
-  }
-
-  @override
-  Future<void> mapRestored() async {
-    super.mapRestored();
-    debugPrint("log map restored");
-  }
-
-  void drawMultiRoads() async {
-    /*
-      8.4638911095,47.4834379430|8.5046595453,47.4046149269
-      8.5244329867,47.4814981476|8.4129691189,47.3982152237
-      8.4371175094,47.4519015578|8.5147623089,47.4321999727
-     */
-
-    final configs = [
-      MultiRoadConfiguration(
-        startPoint: GeoPoint(
-          latitude: 47.4834379430,
-          longitude: 8.4638911095,
-        ),
-        destinationPoint: GeoPoint(
-          latitude: 47.4046149269,
-          longitude: 8.5046595453,
-        ),
-      ),
-      MultiRoadConfiguration(
-          startPoint: GeoPoint(
-            latitude: 47.4814981476,
-            longitude: 8.5244329867,
-          ),
-          destinationPoint: GeoPoint(
-            latitude: 47.3982152237,
-            longitude: 8.4129691189,
-          ),
-          roadOptionConfiguration: const MultiRoadOption(
-            roadColor: Colors.orange,
-          )),
-      MultiRoadConfiguration(
-        startPoint: GeoPoint(
-          latitude: 47.4519015578,
-          longitude: 8.4371175094,
-        ),
-        destinationPoint: GeoPoint(
-          latitude: 47.4321999727,
-          longitude: 8.5147623089,
-        ),
-      ),
-    ];
-    final listRoadInfo = await controller.drawMultipleRoad(
-      configs,
-      commonRoadOption: const MultiRoadOption(
-        roadColor: Colors.red,
-      ),
-    );
-    debugPrint(listRoadInfo.toString());
-  }
-
-  Future<void> drawRoadManually() async {
-    const encoded =
-        "mfp_I__vpAqJ`@wUrCa\\dCgGig@{DwWq@cf@lG{m@bDiQrCkGqImHu@cY`CcP@sDb@e@hD_LjKkRt@InHpCD`F";
-    final list = await encoded.toListGeo();
-    await controller.drawRoadManually(
-      list,
-      const RoadOption(
-        zoomInto: true,
-        roadColor: Colors.blueAccent,
-      ),
-    );
-  }
-}
-
-class RoadTypeChoiceWidget extends StatelessWidget {
-  final Function(RoadType road) setValueCallback;
-
-  const RoadTypeChoiceWidget({
-    super.key,
-    required this.setValueCallback,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 96,
-      child: PopScope(
-        canPop: false,
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            height: 64,
-            width: 196,
-            decoration: BoxDecoration(
+          child: const Text(
+            'Start Planning',
+            style: TextStyle(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            alignment: Alignment.center,
-            margin: const EdgeInsets.all(12.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setValueCallback(RoadType.car);
-                    Navigator.pop(context, RoadType.car);
-                  },
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.directions_car),
-                      Text("Car"),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setValueCallback(RoadType.bike);
-                    Navigator.pop(context);
-                  },
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.directions_bike),
-                      Text("Bike"),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setValueCallback(RoadType.foot);
-                    Navigator.pop(context);
-                  },
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.directions_walk),
-                      Text("Foot"),
-                    ],
-                  ),
-                ),
-              ],
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
 
-class OSMLayersChoiceWidget extends StatelessWidget {
-  final Function(CustomTile? layer) setLayerCallback;
-  final GeoPoint centerPoint;
-  const OSMLayersChoiceWidget({
-    super.key,
-    required this.setLayerCallback,
-    required this.centerPoint,
-  });
+class AboutPage extends StatelessWidget {
+  const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          height: 102,
-          width: 342,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          alignment: Alignment.center,
-          margin: const EdgeInsets.only(top: 8),
-          child: PointerInterceptor(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setLayerCallback(CustomTile.publicTransportationOSM());
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox.square(
-                        dimension: 64,
-                        child: Image.asset(
-                          'asset/transport.png',
-                          fit: BoxFit.fill,
-                        ),
-                      ),
-                      const Text("Transportation"),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setLayerCallback(CustomTile.cycleOSM());
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox.square(
-                        dimension: 64,
-                        child: Image.asset(
-                          'asset/cycling.png',
-                          fit: BoxFit.fill,
-                        ),
-                      ),
-                      const Text("CycleOSM"),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setLayerCallback(null);
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox.square(
-                        dimension: 64,
-                        child: Image.asset(
-                          'asset/earth.png',
-                          fit: BoxFit.fill,
-                        ),
-                      ),
-                      const Text("OSM"),
-                    ],
-                  ),
-                ),
-              ],
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.info, size: 64, color: Colors.green),
+          SizedBox(height: 16),
+          Text('About Us', style: TextStyle(fontSize: 24)),
+          SizedBox(height: 8),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              'We are a team of passionate developers creating the amazing Smart Itinerary Planner. \n Presented by Chang Sum Wing & Chu Ka Hei',
+              style: TextStyle(fontSize: 18),
+              textAlign: TextAlign.center,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HistoryPage extends StatefulWidget {
+  const HistoryPage({super.key});
+
+  @override
+  State<HistoryPage> createState() => _HistoryPage();
+}
+
+class _HistoryPage extends State<HistoryPage> {
+  // Sample data for the table
+  final List<Map<String, String>> tableData = [
+    {
+      'starting': 'New York',
+      'destination': 'Boston',
+      'timeCost': '4h 30m',
+      'staging': 'Direct',
+    },
+    {
+      'starting': 'Chicago',
+      'destination': 'Miami',
+      'timeCost': '6h 15m',
+      'staging': '1 Stop',
+    },
+    {
+      'starting': 'Los Angeles',
+      'destination': 'Seattle',
+      'timeCost': '2h 45m',
+      'staging': 'Direct',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Container(
+        width: MediaQuery.of(context).size.width, // Span full screen width
+        child: DataTable(
+          // Define column headers
+          columns: const [
+            DataColumn(
+              label: Text(
+                'Starting',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Destination',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Time Cost',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Staging',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          // Define rows from sample data
+          rows: tableData
+              .map(
+                (data) => DataRow(
+                  cells: [
+                    DataCell(Text(data['starting']!)),
+                    DataCell(Text(data['destination']!)),
+                    DataCell(Text(data['timeCost']!)),
+                    DataCell(Text(data['staging']!)),
+                  ],
+                ),
+              )
+              .toList(),
+          // Optional styling
+          columnSpacing: 20.0,
+          dataRowHeight: 50.0,
+          headingRowColor: MaterialStateProperty.all(Colors.blue[100]),
+          border: TableBorder.all(
+            color: Colors.grey,
+            width: 1.0,
           ),
         ),
       ),
     );
   }
 }
+
+
+class FavoritePage extends StatelessWidget {
+  const FavoritePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.contact_mail, size: 64, color: Colors.purple),
+          const SizedBox(height: 16),
+          const Text('Contact Us', style: TextStyle(fontSize: 24)),
+          const SizedBox(height: 24),
+          const Text('Email: contact@example.com'),
+          const SizedBox(height: 8),
+          const Text('Phone: (123) 456-7890'),
+          const SizedBox(height: 24),
+          ElevatedButton(onPressed: () {}, child: const Text('Send Message')),
+        ],
+      ),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.settings, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text('Settings', style: TextStyle(fontSize: 24)),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: 300,
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: const Text('Dark Mode'),
+                  value: false,
+                  onChanged: (value) {},
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.notifications),
+                  title: const Text('Notification Settings'),
+                  onTap: () {},
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.security),
+                  title: const Text('Privacy Settings'),
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
