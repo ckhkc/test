@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:test/big_model.dart';
 
@@ -20,6 +24,7 @@ class RouteSuggestionDialog extends StatefulWidget {
 class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
     with TickerProviderStateMixin {
   late AnimationController _enterController;
+  late AnimationController _showController;
   late Animation<Offset> _slideAnimation;
 
   @override
@@ -29,6 +34,11 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
     // Now 'this' is a valid TickerProvider
     _enterController = AnimationController(
       duration: const Duration(milliseconds: 300),
+      vsync: this, // This now works correctly
+    );
+
+    _showController = AnimationController(
+      duration: const Duration(milliseconds: 100),
       vsync: this, // This now works correctly
     );
 
@@ -43,6 +53,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
   @override
   void dispose() {
     _enterController.dispose();
+    _showController.dispose();
     super.dispose();
   }
 
@@ -98,7 +109,6 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                           color: Colors.black54,
                         ), // <- New icon
                         onPressed: () {
-                          _navigateBackward();
                           model.goBackStaticPoints();
                         },
                       ),
@@ -133,11 +143,12 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                               return _buildMenuItem(
                                 icon: Icons.category,
                                 title: itemText['location'] as String,
-                                onTap: () {
+                                onTap: () async {
                                   debugPrint("Clicked: $itemText");
                                   _navigateForward();
-                                  model.addStaticPoints(
-                                    model.staticPointsList.last,
+
+                                  await sendRestaurantRequest(
+                                    itemText['location'] as String,
                                   );
                                 },
                               );
@@ -154,19 +165,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
 
   void _navigateForward() async {
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0), // Enters from right
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _enterController, curve: Curves.easeInOut),
-    );
-
-    _enterController.reset();
-    await _enterController.forward();
-  }
-
-  void _navigateBackward() async {
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(-1.0, 0.0), // Enters from left (mirror of forward)
+      begin: const Offset(-1.0, 0.0),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _enterController, curve: Curves.easeInOut),
@@ -191,5 +190,121 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       hoverColor: Colors.grey[100],
     );
+  }
+
+  Future<void> sendRestaurantRequest(String district) async {
+    // Create a Completer to track when loading dialog is shown
+    final loadingCompleter = Completer<void>();
+    late BuildContext loadingContext;
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        loadingContext = context;
+        loadingCompleter.complete();
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Finding reachable locations...'),
+            ],
+          ),
+        );
+      },
+    );
+
+    // Wait for dialog to be fully shown
+    await loadingCompleter.future;
+
+    try {
+      // Prepare request data
+      final requestData = {'district': district};
+
+      // Create the HTTP request future
+      final requestFuture = http.post(
+        Uri.parse(
+          'http://localhost:5000/restaurants',
+        ), // Use 10.0.2.2 for Android emulator
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestData),
+      );
+
+      // Create timeout future
+      final timeoutFuture = Future.delayed(Duration(seconds: 3)).then((_) {
+        throw TimeoutException('Request timed out after 3 seconds');
+      });
+
+      // Race the request against timeout
+      final response = await Future.any([requestFuture, timeoutFuture]);
+
+      // Close loading dialog
+      if (Navigator.of(loadingContext).canPop()) {
+        Navigator.of(loadingContext).pop();
+      }
+
+      // Process successful response
+      if (response.statusCode == 200) {
+        final dynamic decodedJson = json.decode(response.body);
+        final List<dynamic> restaurants =
+            decodedJson['restaurants'] as List? ?? [];
+        // Navigator.of(context).pop();
+        print(restaurants);
+      } else {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Error'),
+                content: Text('Server returned error: ${response.statusCode}'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('OK'),
+                  ),
+                ],
+              ),
+        );
+      }
+    } on TimeoutException {
+      if (Navigator.of(loadingContext).canPop()) {
+        Navigator.of(loadingContext).pop();
+      }
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Timeout'),
+              content: Text('Request timed out after 3 seconds'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+      );
+    } catch (e) {
+      if (Navigator.of(loadingContext).canPop()) {
+        Navigator.of(loadingContext).pop();
+      }
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Error'),
+              content: Text('An error occurred: ${e.toString()}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+      );
+    }
   }
 }
