@@ -17,6 +17,65 @@ class MapPage extends StatefulWidget {
 class _MapPage extends State<MapPage> {
   final MapController _mapController = MapController();
   final GeoPoint point = GeoPoint(latitude: 0, longitude: 0);
+  // final GeoPoint pointA = GeoPoint(latitude: latitude, longitude: longitude)
+
+  List<LatLng> routePoints = [];
+  final MapController mapController = MapController();
+
+  // Define start and end coordinates
+  final LatLng startCoord = LatLng(22.27763, 114.17323); // London
+  // final LatLng startCoord =
+  final LatLng endCoord = LatLng(22.28041, 114.18474); // Slightly north-west
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRoute();
+  }
+
+  Future<void> fetchRoute() async {
+    const apiKey =
+        '5b3ce3597851110001cf6248724e0cc50fa3463a9c41b1707976aae3'; // Replace with your API key
+    final url =
+        'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Authorization': apiKey, 'Content-Type': 'application/json'},
+      body: json.encode({
+        'coordinates': [
+          [startCoord.longitude, startCoord.latitude],
+          [endCoord.longitude, endCoord.latitude],
+        ],
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final coordinates = data['features'][0]['geometry']['coordinates'];
+
+      setState(() {
+        routePoints =
+            coordinates
+                .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+                .toList();
+      });
+
+      // Center map on the route
+      if (routePoints.isNotEmpty) {
+        mapController.move(
+          LatLng(
+            (startCoord.latitude + endCoord.latitude) / 2,
+            (startCoord.longitude + endCoord.longitude) / 2,
+          ),
+          14.0,
+        );
+      }
+    } else {
+      throw Exception('Failed to load route');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
@@ -82,6 +141,27 @@ class _MapPage extends State<MapPage> {
                       size: 30,
                       color: Colors.red,
                     ),
+                  ),
+                  Marker(
+                    // point: LatLng(point.latitude, point.longitude),
+                    point: LatLng(model.point.latitude, model.point.longitude),
+                    width: 60,
+                    height: 60,
+                    alignment: Alignment.centerLeft,
+                    child: Icon(
+                      Icons.location_pin,
+                      size: 30,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 4.0,
+                    color: Colors.blue,
                   ),
                 ],
               ),

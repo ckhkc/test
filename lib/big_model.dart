@@ -14,6 +14,10 @@ class BigModel with ChangeNotifier {
 
   List<Map<String, String>> get favorites => _favorites;
 
+  GeoPoint _pointA = GeoPoint(latitude: 0, longitude: 0);
+
+  GeoPoint _pointB = GeoPoint(latitude: 0, longitude: 0);
+
   void updatePoint(double latitude, double longitude) {
     _point = GeoPoint(latitude: latitude, longitude: longitude);
     notifyListeners();

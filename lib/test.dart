@@ -1,162 +1,130 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Left Side Dialog Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const MyHomePage(),
+      title: 'Walking Path Map',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const MapPage(),
     );
   }
 }
 
-class LeftSideDialog extends StatelessWidget {
-  final bool isVisible;
-  final VoidCallback onClose;
-
-  const LeftSideDialog({
-    Key? key,
-    required this.isVisible,
-    required this.onClose,
-  }) : super(key: key);
+class MapPage extends StatefulWidget {
+  const MapPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      left: isVisible ? 0 : -300,
-      top: 0,
-      bottom: 0,
-      width: 300,
-      child: Material(
-        elevation: 8,
-        color: Colors.white,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(16),
-              bottomRight: Radius.circular(16),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(2, 0),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Menu',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black54),
-                      onPressed: onClose,
-                    ),
-                  ],
-                ),
-              ),
-              // Scrollable Content
-              Expanded(
-                child: ListView.builder(
-                  itemCount: 20,
-                  itemBuilder: (context, index) {
-                    return _buildMenuItem(
-                      icon: Icons.category,
-                      title: 'Item ${index + 1}',
-                      onTap: () {},
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black54),
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 16, color: Colors.black87),
-      ),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      hoverColor: Colors.grey[100],
-    );
-  }
+  State<MapPage> createState() => _MapPageState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class _MapPageState extends State<MapPage> {
+  List<LatLng> routePoints = [];
+  final MapController mapController = MapController();
+
+  // Define start and end coordinates
+  final LatLng startCoord = const LatLng(51.5074, -0.1278); // London
+  final LatLng endCoord = const LatLng(51.5174, -0.1378); // Slightly north-west
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
+  void initState() {
+    super.initState();
+    fetchRoute();
+  }
 
-class _MyHomePageState extends State<MyHomePage> {
-  bool _isDialogVisible = false;
+  Future<void> fetchRoute() async {
+    const apiKey =
+        '5b3ce3597851110001cf6248724e0cc50fa3463a9c41b1707976aae3'; // Replace with your API key
+    final url =
+        'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Authorization': apiKey, 'Content-Type': 'application/json'},
+      body: json.encode({
+        'coordinates': [
+          [startCoord.longitude, startCoord.latitude],
+          [endCoord.longitude, endCoord.latitude],
+        ],
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final coordinates = data['features'][0]['geometry']['coordinates'];
+
+      setState(() {
+        routePoints =
+            coordinates
+                .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+                .toList();
+      });
+
+      // Center map on the route
+      if (routePoints.isNotEmpty) {
+        mapController.move(
+          LatLng(
+            (startCoord.latitude + endCoord.latitude) / 2,
+            (startCoord.longitude + endCoord.longitude) / 2,
+          ),
+          14.0,
+        );
+      }
+    } else {
+      throw Exception('Failed to load route');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Left Side Dialog Demo')),
-      body: Stack(
+      appBar: AppBar(title: const Text('Walking Path')),
+      body: FlutterMap(
+        mapController: mapController,
+        options: MapOptions(initialCenter: startCoord, initialZoom: 13.0),
         children: [
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _isDialogVisible = true;
-                });
-              },
-              child: const Text('Open Dialog'),
-            ),
+          TileLayer(
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            subdomains: const ['a', 'b', 'c'],
           ),
-          LeftSideDialog(
-            isVisible: _isDialogVisible,
-            onClose: () {
-              setState(() {
-                // _isDialogVisible = false;
-              });
-            },
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: startCoord,
+                child: const Icon(
+                  Icons.location_pin,
+                  color: Colors.red,
+                  size: 40,
+                ),
+              ),
+              Marker(
+                point: endCoord,
+                child: const Icon(
+                  Icons.location_pin,
+                  color: Colors.blue,
+                  size: 40,
+                ),
+              ),
+            ],
+          ),
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: routePoints,
+                strokeWidth: 4.0,
+                color: Colors.blue,
+              ),
+            ],
           ),
         ],
       ),
