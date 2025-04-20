@@ -99,9 +99,9 @@ class _MapPage extends State<MapPage> {
                     0.8, // 80% of screen width
                 child: ElevatedButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Get Started pressed!')),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   SnackBar(content: Text('Get Started pressed!')),
+                    // );
                     showDialog(
                       context: context,
                       builder: (context) => PromptDialog(),
@@ -224,15 +224,20 @@ class PromptDialog extends StatefulWidget {
 }
 
 class _PromptDialogState extends State<PromptDialog> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _numberController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
+  final TextEditingController _departureController = TextEditingController();
+  final TextEditingController _destinationController = TextEditingController();
+  final TextEditingController _stepsController = TextEditingController();
+  final TextEditingController _thetaController = TextEditingController();
+
+  var isProblemInput = false;
+  var isProblemPrompt = '';
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _numberController.dispose();
-    _timeController.dispose();
+    _departureController.dispose();
+    _destinationController.dispose();
+    _stepsController.dispose();
+    _thetaController.dispose();
     super.dispose();
   }
 
@@ -284,7 +289,7 @@ class _PromptDialogState extends State<PromptDialog> {
             ),
             const SizedBox(height: 10),
             TextField(
-              controller: _nameController,
+              controller: _departureController,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -307,7 +312,7 @@ class _PromptDialogState extends State<PromptDialog> {
             ),
             const SizedBox(height: 10),
             TextField(
-              controller: _numberController,
+              controller: _destinationController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
@@ -331,7 +336,7 @@ class _PromptDialogState extends State<PromptDialog> {
             ),
             const SizedBox(height: 10),
             TextField(
-              controller: _timeController,
+              controller: _thetaController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
@@ -343,6 +348,37 @@ class _PromptDialogState extends State<PromptDialog> {
                 fillColor: Colors.grey[100],
               ),
             ),
+            // Number of steps
+            const Text(
+              'How many activities you would like to have?',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _stepsController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                labelText: 'Number of activities',
+                prefixIcon: Icon(Icons.place, color: Colors.blueAccent),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (isProblemInput)
+              Center(
+                child: Text(
+                  isProblemPrompt,
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
           ],
         ),
       ),
@@ -358,29 +394,49 @@ class _PromptDialogState extends State<PromptDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            if (_nameController.text.isEmpty ||
-                _numberController.text.isEmpty ||
-                _timeController.text.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please fill in all fields to continue.'),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
+            if (_departureController.text.isEmpty ||
+                _destinationController.text.isEmpty ||
+                _thetaController.text.isEmpty ||
+                _stepsController.text.isEmpty) {
+              setState(() {
+                isProblemInput = true;
+                isProblemPrompt = 'There is some missing fields.';
+              });
               return;
+            } else {
+              setState(() {
+                isProblemInput = false;
+                isProblemPrompt = '';
+              });
             }
 
-            int? numberOfFields = int.tryParse(_numberController.text);
-            if (numberOfFields == null || numberOfFields <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Please enter a valid positive number of destinations.',
-                  ),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
+            int? theta = int.tryParse(_thetaController.text);
+            if (theta == null || theta <= 0) {
+              setState(() {
+                isProblemInput = true;
+                isProblemPrompt = 'Please enter a positive number for time.';
+              });
               return;
+            } else {
+              setState(() {
+                isProblemInput = false;
+                isProblemPrompt = '';
+              });
+            }
+
+            int? steps = int.tryParse(_stepsController.text);
+            if (steps == null || steps < 0) {
+              setState(() {
+                isProblemInput = true;
+                isProblemPrompt =
+                    'Please enter a non-negative number for no. of activities.';
+              });
+              return;
+            } else {
+              setState(() {
+                isProblemInput = false;
+                isProblemPrompt = '';
+              });
             }
 
             // Close the dialog
