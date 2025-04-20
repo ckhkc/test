@@ -38,8 +38,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key, required this.favoritesModel});
-  final FavoritesModel favoritesModel;
+  // MyApp({super.key});
+  final FavoritesModel favoritesModel = FavoritesModel();
 
   @override
   Widget build(BuildContext context) {
