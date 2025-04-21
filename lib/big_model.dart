@@ -78,7 +78,7 @@ class BigModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void updatePoint(double latitude, double longitude) {
+  void pinPoint(double latitude, double longitude) {
     _point = GeoPoint(latitude: latitude, longitude: longitude);
     notifyListeners();
   }

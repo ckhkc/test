@@ -211,7 +211,7 @@ class _PinLocDialogState extends State<PinLocDialog> {
           final lon = double.parse(data[0]['lon']);
           // Return coordinates and close dialog
           Navigator.of(context).pop(GeoPoint(latitude: lat, longitude: lon));
-          model.updatePoint(lat, lon);
+          model.pinPoint(lat, lon);
           widget.mapController.move(LatLng(lat, lon), 18);
         } else {
           ScaffoldMessenger.of(
