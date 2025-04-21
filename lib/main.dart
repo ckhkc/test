@@ -8,13 +8,28 @@ import 'package:test/pages/map_page.dart';
 import 'package:test/pages/settings_page.dart';
 import 'package:test/geo_point.dart';
 import 'package:test/big_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-//for debug
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  // Ideal time to initialize
+  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+  //...
   runApp(
     ChangeNotifierProvider(create: (context) => BigModel(), child: MyApp()),
   );
 }
+
+// //for debug
+// void main() async {
+
+//   runApp(
+//     ChangeNotifierProvider(create: (context) => BigModel(), child: MyApp()),
+//   );
+// }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

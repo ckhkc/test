@@ -45,7 +45,9 @@ class _MapPage extends State<MapPage> {
               IconButton(
                 icon: Icon(Icons.settings),
                 onPressed: () {
-                  print('Settings button pressed');
+                  print(
+                    'Settings button pressed',
+                  ); //maybe this can be done as changing the map?
                 },
                 tooltip: 'Settings',
               ),
