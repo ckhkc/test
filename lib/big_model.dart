@@ -195,6 +195,10 @@ class BigModel with ChangeNotifier {
 
         durationInSeconds = logScale(durationInSeconds);
 
+        if (durationInSeconds >= timeCredit) {
+          durationInSeconds = timeCredit * curK / totalK;
+        }
+
         routes_duration.add(durationInSeconds);
         timeCredit -= durationInSeconds;
 

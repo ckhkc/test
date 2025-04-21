@@ -145,6 +145,7 @@ class _MapPageState extends State<MapPage> {
                         child: ElevatedButton(
                           onPressed: () {
                             model.hideRouteDialog();
+                            model.clearPoint();
                             showDialog(
                               context: context,
                               builder: (context) => PromptDialog(),
