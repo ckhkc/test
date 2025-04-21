@@ -103,15 +103,8 @@ class BigModel with ChangeNotifier {
       double.parse(parts[0]), // latitude (22.300688)
       double.parse(parts[1]), // longitude (114.167687)
     );
-    print(point);
-    print(coordinates);
     addPoint(point);
     notifyListeners();
-
-    // // Optional: Show feedback
-    // ScaffoldMessenger.of(
-    //   context,
-    // ).showSnackBar(SnackBar(content: Text('Selected: ${restaurant['Name']}')));
   }
 
   Future<void> addPoint(LatLng newPoint) async {

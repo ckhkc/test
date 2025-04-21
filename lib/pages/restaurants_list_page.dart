@@ -38,23 +38,6 @@ class RestaurantListPage extends StatelessWidget {
           ),
         ),
       ),
-      // body: Container(
-      //   decoration: BoxDecoration(
-      //     gradient: LinearGradient(
-      //       colors: [Colors.purple[50]!, Colors.blue[50]!],
-      //       begin: Alignment.topCenter,
-      //       end: Alignment.bottomCenter,
-      //     ),
-      //   ),
-      //   child: ListView.builder(
-      //     padding: const EdgeInsets.all(16.0),
-      //     itemCount: model.restaurants.length,
-      //     itemBuilder: (context, index) {
-      //       final restaurant = model.restaurants[index];
-      //       return RestaurantCard(restaurant: restaurant);
-      //     },
-      //   ),
-      // ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
