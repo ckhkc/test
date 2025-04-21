@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -22,6 +23,7 @@ class BigModel with ChangeNotifier {
 
   List<LatLng> pointsList = [];
   List<List<LatLng>> routes = [];
+  List<double> routes_duration = [];
 
   List<Map<String, dynamic>> restaurants = [];
   bool restaurantPageVisible = false;
@@ -134,23 +136,46 @@ class BigModel with ChangeNotifier {
 
         final coordinates = data['features'][0]['geometry']['coordinates'];
 
+        final double durationInSeconds =
+            data['features'][0]['properties']['segments'][0]['duration'];
+        routes_duration.add(durationInSeconds);
+
         final routePoints =
             coordinates
                 .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
                 .toList();
         routes.add(routePoints);
+
+        // add new static points list
+        await sendNewStaticPointsRequest(durationInSeconds);
       }
 
       pointsList.add(newPoint);
     }
-    print(pointsList);
-    print(routes);
+    notifyListeners();
+  }
+
+  Future<void> sendNewStaticPointsRequest(double timeUsed) async {}
+
+  void removeLastPoint() {
+    if (pointsList.isEmpty) {
+      return;
+    } else {
+      pointsList.removeLast();
+      if (routes.isNotEmpty) {
+        routes.removeLast();
+      }
+      if (routes_duration.isNotEmpty) {
+        routes_duration.removeLast();
+      }
+    }
     notifyListeners();
   }
 
   void clearPoint() {
     pointsList.clear();
     routes.clear();
+    routes_duration.clear();
     notifyListeners();
   }
 }

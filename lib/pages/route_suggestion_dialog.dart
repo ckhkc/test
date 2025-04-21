@@ -110,6 +110,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                         ), // <- New icon
                         onPressed: () {
                           model.goBackStaticPoints();
+                          model.removeLastPoint();
                         },
                       ),
 
