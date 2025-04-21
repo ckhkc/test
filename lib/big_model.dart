@@ -364,6 +364,8 @@ class BigModel with ChangeNotifier {
 
     showAdditionalRoutes = true;
     hideRouteDialog();
+
+    print(selectedRestaurant);
     notifyListeners();
   }
 }
