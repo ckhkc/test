@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'package:test/pages/restaurants_list_page.dart';
 
 import 'package:test/pages/route_suggestion_dialog.dart';
 
@@ -92,134 +93,137 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
     final points = getAllPoints();
     // final model = Provider.of<BigModel>(context);
     fetchRoutes();
-    return Scaffold(
-      appBar: AppBar(
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.blue,
-        toolbarHeight: 40,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => PinLocDialog(_mapController),
-              );
-            },
-            tooltip: 'Search',
-          ),
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              print('Settings button pressed');
-            },
-            tooltip: 'Settings',
-          ),
-          TextButton(
-            onPressed: () {
-              print('Text button pressed');
-            },
-            child: Text('Action', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: LatLng(22.2700000, 114.1750000),
-              initialZoom: 14,
-            ),
-            children: [
-              TileLayer(
-                // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
-                // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
-                // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
-                userAgentPackageName:
-                    'com.example.app', // Required for OSM usage policy
+    return model.restaurantPageVisible
+        ? RestaurantListPage()
+        : Scaffold(
+          appBar: AppBar(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.blue,
+            toolbarHeight: 40,
+            actions: [
+              IconButton(
+                icon: Icon(Icons.search),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => PinLocDialog(_mapController),
+                  );
+                },
+                tooltip: 'Search',
               ),
-              MarkerLayer(
-                markers:
-                    points.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final point = entry.value;
-                      return Marker(
-                        point: point,
-                        width: 60,
-                        height: 60,
-                        alignment: Alignment.centerLeft,
-                        child: Icon(
-                          Icons.location_pin,
-                          size: 30,
-                          color:
-                              index == 0
-                                  ? Colors
-                                      .green // Start point
-                                  : index == points.length - 1
-                                  ? Colors
-                                      .red // End point
-                                  : Colors.blue, // Intermediate points
-                        ),
-                      );
-                    }).toList(),
+              IconButton(
+                icon: Icon(Icons.settings),
+                onPressed: () {
+                  print('Settings button pressed');
+                },
+                tooltip: 'Settings',
               ),
-              PolylineLayer(
-                polylines:
-                    routes
-                        .map(
-                          (route) => Polyline(
-                            // points: LatLng(route as double),
-                            points: route,
-                            strokeWidth: 4.0,
-                            color: Colors.blue,
-                          ),
-                        )
-                        .toList(),
+              TextButton(
+                onPressed: () {
+                  print('Text button pressed');
+                },
+                child: Text('Action', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 16,
-            child: Center(
-              child: SizedBox(
-                width:
-                    MediaQuery.of(context).size.width *
-                    0.8, // 80% of screen width
-                child: ElevatedButton(
-                  onPressed: () {
-                    // ScaffoldMessenger.of(context).showSnackBar(
-                    //   SnackBar(content: Text('Get Started pressed!')),
-                    // );
-                    model.hideRouteDialog();
-                    showDialog(
-                      context: context,
-                      builder: (context) => PromptDialog(),
-                    );
-                  },
-                  child: Text('Get Started'),
+          body: Stack(
+            children: [
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: LatLng(22.2700000, 114.1750000),
+                  initialZoom: 14,
                 ),
+                children: [
+                  TileLayer(
+                    // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
+                    // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
+                    // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
+                    userAgentPackageName:
+                        'com.example.app', // Required for OSM usage policy
+                  ),
+                  MarkerLayer(
+                    markers:
+                        points.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final point = entry.value;
+                          return Marker(
+                            point: point,
+                            width: 60,
+                            height: 60,
+                            alignment: Alignment.centerLeft,
+                            child: Icon(
+                              Icons.location_pin,
+                              size: 30,
+                              color:
+                                  index == 0
+                                      ? Colors
+                                          .green // Start point
+                                      : index == points.length - 1
+                                      ? Colors
+                                          .red // End point
+                                      : Colors.blue, // Intermediate points
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                  PolylineLayer(
+                    polylines:
+                        routes
+                            .map(
+                              (route) => Polyline(
+                                // points: LatLng(route as double),
+                                points: route,
+                                strokeWidth: 4.0,
+                                color: Colors.blue,
+                              ),
+                            )
+                            .toList(),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 16,
+                    child: Center(
+                      child: SizedBox(
+                        width:
+                            MediaQuery.of(context).size.width *
+                            0.8, // 80% of screen width
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // ScaffoldMessenger.of(context).showSnackBar(
+                            //   SnackBar(content: Text('Get Started pressed!')),
+                            // );
+                            model.hideRouteDialog();
+                            showDialog(
+                              context: context,
+                              builder: (context) => PromptDialog(),
+                            );
+                          },
+                          child: Text('Get Started'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+              RouteSuggestionDialog(
+                isVisible: model.isDialogVisible,
+                onClose: () {
+                  setState(() {
+                    model.hideRouteDialog();
+                  });
+                },
+              ),
+            ],
           ),
-          RouteSuggestionDialog(
-            isVisible: model.isDialogVisible,
-            onClose: () {
-              setState(() {
-                model.hideRouteDialog();
-              });
-            },
-          ),
-        ],
-      ),
-    );
+        );
   }
 }
 

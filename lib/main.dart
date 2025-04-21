@@ -88,6 +88,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Top Navigation App'),

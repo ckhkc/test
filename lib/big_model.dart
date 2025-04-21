@@ -25,6 +25,10 @@ class BigModel with ChangeNotifier {
     ],
   ];
 
+  List<Map<String, dynamic>> restaurants = [];
+  bool restaurantPageVisible = false;
+  Map<String, dynamic>? selectedRestaurant;
+
   void updatePoint(double latitude, double longitude) {
     _point = GeoPoint(latitude: latitude, longitude: longitude);
     notifyListeners();
@@ -68,5 +72,34 @@ class BigModel with ChangeNotifier {
       hideRouteDialog();
     }
     notifyListeners();
+  }
+
+  void setRestaurants(List<Map<String, dynamic>> newRestaurant) {
+    restaurants = newRestaurant;
+    notifyListeners();
+  }
+
+  void showRestaurants() {
+    restaurantPageVisible = true;
+    notifyListeners();
+  }
+
+  void hideRestaurants() {
+    restaurantPageVisible = false;
+    notifyListeners();
+  }
+
+  void onRestaurantSelected(
+    BuildContext context,
+    Map<String, dynamic> restaurant,
+  ) {
+    selectedRestaurant = restaurant;
+    restaurantPageVisible = true; // Keep restaurant page visible
+    notifyListeners();
+
+    // Optional: Show feedback
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Selected: ${restaurant['Name']}')));
   }
 }
