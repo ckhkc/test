@@ -112,7 +112,6 @@ class BigModel with ChangeNotifier {
 
   void addStaticPoints(List<Map<String, dynamic>> newStaticPointsList) {
     staticPointsList.add(newStaticPointsList);
-    setCurK(curK + 1);
     notifyListeners();
   }
 
@@ -164,6 +163,7 @@ class BigModel with ChangeNotifier {
   }
 
   Future<void> addPoint(LatLng newPoint) async {
+    setCurK(curK + 1);
     if (pointsList.isEmpty) {
       pointsList.add(newPoint);
     } else {
@@ -208,13 +208,12 @@ class BigModel with ChangeNotifier {
                 .toList();
         routes.add(routePoints);
 
-        print(curK);
-        print(totalK);
-        if (curK == totalK) {
+        if (curK > totalK) {
           notifyListeners();
         } else {
           // add new static points list
-          await sendNewStaticPointsRequest();
+          // await sendNewStaticPointsRequest();
+          sendNewStaticPointsRequest();
         }
       }
 
@@ -229,7 +228,7 @@ class BigModel with ChangeNotifier {
       final requestData = {
         'current_location': selectedSP.last,
         'destination': end,
-        'k': totalK - curK,
+        'k': totalK - curK + 1,
         'theta': timeCredit,
       };
 

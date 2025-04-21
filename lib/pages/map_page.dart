@@ -397,7 +397,7 @@ class _PromptDialogState extends State<PromptDialog> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                labelText: 'Time (in minutes)',
+                labelText: 'Time Credit (aprx. 1000~5000 for each step)',
                 prefixIcon: Icon(Icons.timer, color: Colors.blueAccent),
                 filled: true,
                 fillColor: Colors.grey[100],
@@ -525,7 +525,7 @@ class _PromptDialogState extends State<PromptDialog> {
               // Create the HTTP request future
               final requestFuture = http.post(
                 Uri.parse(
-                  'http://localhost:5000/reachable_locations',
+                  'http://localhost:5000/starts_travel',
                 ), // Use 10.0.2.2 for Android emulator
                 headers: {'Content-Type': 'application/json'},
                 body: json.encode(requestData),
@@ -569,7 +569,7 @@ class _PromptDialogState extends State<PromptDialog> {
 
                 model.start = _departureController.text;
                 model.end = _destinationController.text;
-                model.setCurK(0);
+                model.setCurK(1);
                 model.setTotalK(steps);
                 model.setTimeCredit(theta);
                 model.addStaticPoints(reachablePoints);

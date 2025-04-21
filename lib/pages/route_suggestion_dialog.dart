@@ -119,9 +119,8 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                         child: Consumer<BigModel>(
                           builder:
                               (context, model, child) =>
-                                  model.curK == model.totalK
+                                  model.curK > model.totalK
                                       ? Text(
-                                        // Show this if curK == totalK
                                         'Completed all ${model.totalK} steps! Time credit left: ${model.timeCredit}',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -145,7 +144,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                   child:
                       model.staticPointsList.isEmpty
                           ? const Center(child: Text("No items available"))
-                          : model.curK == model.totalK
+                          : model.curK > model.totalK
                           ? Center(
                             child: Text(
                               "The Travel is planned, please enjoy it!.",
