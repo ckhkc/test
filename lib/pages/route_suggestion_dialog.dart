@@ -153,7 +153,12 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                                 ),
                                 SizedBox(height: 18),
                                 ElevatedButton(
-                                  onPressed: () => model.onAccept(),
+                                  onPressed:
+                                      () => {
+                                        model.onAccept(),
+                                        model.saveToHistory(),
+                                        print(model.acceptHistory),
+                                      },
                                   child: Text("Accept"),
                                 ),
                               ],
@@ -214,7 +219,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                                     // Create the HTTP request future
                                     final requestFuture = http.post(
                                       Uri.parse(
-                                        'http://localhost:5000/restaurants',
+                                        'http://localhost:8000/restaurants',
                                       ), // Use 10.0.2.2 for Android emulator
                                       headers: {
                                         'Content-Type': 'application/json',

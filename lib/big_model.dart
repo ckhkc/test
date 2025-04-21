@@ -58,6 +58,8 @@ class BigModel with ChangeNotifier {
   bool restaurantPageVisible = false;
   List<Map<String, dynamic>> selectedRestaurant = [];
 
+  dynamic acceptHistory = [];
+
   double timeCredit = 0;
   int totalK = 0;
   int curK = 0;
@@ -244,7 +246,7 @@ class BigModel with ChangeNotifier {
       // Create the HTTP request future
       final requestFuture = http.post(
         Uri.parse(
-          'http://localhost:5000/reachable_locations',
+          'http://localhost:8000/reachable_locations',
         ), // Use 10.0.2.2 for Android emulator
         headers: {'Content-Type': 'application/json'},
         body: json.encode(requestData),
@@ -298,6 +300,7 @@ class BigModel with ChangeNotifier {
         selectedRestaurant.removeLast();
       }
     }
+
     notifyListeners();
   }
 
@@ -362,7 +365,22 @@ class BigModel with ChangeNotifier {
     showAdditionalRoutes = true;
     hideRouteDialog();
 
-    print(selectedRestaurant);
     notifyListeners();
+  }
+
+  List<List<String>> extractData(List<Map<String, dynamic>> data) {
+    return data.map((item) {
+      return [
+        item['name']?.toString() ?? 'Unknown Name',
+        item['address']?.toString() ?? 'Unknown Address',
+        item['type']?.toString() ?? 'Unknown Type',
+      ];
+    }).toList();
+  }
+
+  void saveToHistory() {
+    List info = extractData(selectedRestaurant);
+    dynamic list = [start, info, end];
+    acceptHistory.add(list);
   }
 }

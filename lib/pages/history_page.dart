@@ -6,29 +6,30 @@ class HistoryPage extends StatelessWidget {
   HistoryPage({super.key});
 
   // Mock data for route history
-  final List<Map<String, String>> routeHistory = [
-    {
-      'name': 'Office Trip',
-      'destination': 'City Center',
-      'duration': '25 min',
-      'date': '2025-04-18',
-    },
-    {
-      'name': 'Grocery Run',
-      'destination': 'Mall',
-      'duration': '15 min',
-      'date': '2025-04-17',
-    },
-    {
-      'name': 'Evening Walk',
-      'destination': 'Park',
-      'duration': '40 min',
-      'date': '2025-04-16',
-    },
-  ];
+  // List<Map<String, String>> routeHistory = [
+  //   {
+  //     'name': 'Office Trip',
+  //     'destination': 'City Center',
+  //     // 'duration': '25 min',
+  //     // 'date': '2025-04-18',
+  //   },
+  //   {
+  //     'name': 'Grocery Run',
+  //     'destination': 'Mall',
+  //     // 'duration': '15 min',
+  //     // 'date': '2025-04-17',
+  //   },
+  //   {
+  //     'name': 'Evening Walk',
+  //     'destination': 'Park',
+  //     // 'duration': '40 min',
+  //     // 'date': '2025-04-16',
+  //   },
+  // ];
 
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('Route History'),
@@ -36,7 +37,7 @@ class HistoryPage extends StatelessWidget {
         elevation: 0,
       ),
       body:
-          routeHistory.isEmpty
+          model.acceptHistory.isEmpty
               ? Center(
                 child: Text(
                   'No route history yet!',
@@ -49,9 +50,9 @@ class HistoryPage extends StatelessWidget {
               )
               : ListView.builder(
                 padding: EdgeInsets.all(16),
-                itemCount: routeHistory.length,
+                itemCount: model.acceptHistory.length,
                 itemBuilder: (context, index) {
-                  final route = routeHistory[index];
+                  final route = model.acceptHistory[index];
                   return HistoryRouteCard(route: route, index: index);
                 },
               ),
@@ -99,6 +100,7 @@ class _HistoryRouteCardState extends State<HistoryRouteCard> {
 
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<BigModel>(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 16),
       child: Row(
@@ -171,14 +173,15 @@ class _HistoryRouteCardState extends State<HistoryRouteCard> {
                         ],
                       ),
                       SizedBox(height: 8),
-                      Text(
-                        'To: ${widget.route['destination']}',
-                        style: TextStyle(fontSize: 14, color: Colors.black87),
-                      ),
-                      Text(
-                        'Date: ${widget.route['date']}',
-                        style: TextStyle(fontSize: 14, color: Colors.black87),
-                      ),
+                      Text('details: ${model.acceptHistory}'),
+                      // Text(
+                      //   'To: ${widget.route['destination']}',
+                      //   style: TextStyle(fontSize: 14, color: Colors.black87),
+                      // ),
+                      // Text(
+                      //   'Date: ${widget.route['date']}',
+                      //   style: TextStyle(fontSize: 14, color: Colors.black87),
+                      // ),
                       Text(
                         'Duration: ${widget.route['duration']}',
                         style: TextStyle(fontSize: 14, color: Colors.black87),
