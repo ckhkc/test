@@ -121,14 +121,14 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                               (context, model, child) =>
                                   model.curK > model.totalK
                                       ? Text(
-                                        'Completed all ${model.totalK} steps! Time credit left: ${model.timeCredit}',
+                                        'Completed all ${model.totalK} steps! Time left (mins): ${(model.timeCredit / 60).toStringAsFixed(2)}',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ), // Optional styling
                                       )
                                       : Text(
                                         // Default text
-                                        'The ${model.curK}-th step, with ${model.timeCredit} time credit.',
+                                        'The ${model.curK}-th step, with ${(model.timeCredit / 60).toStringAsFixed(2)} mins.',
                                       ),
                         ),
                       ),
@@ -157,6 +157,13 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                                   child: Text("Accept"),
                                 ),
                               ],
+                            ),
+                          )
+                          : model.staticPointsList.last.isEmpty
+                          ? Center(
+                            child: Text(
+                              textAlign: TextAlign.center,
+                              'You may want to reduce no. of steps, or increase time budget......',
                             ),
                           )
                           : ListView.builder(

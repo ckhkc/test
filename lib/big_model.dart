@@ -19,6 +19,7 @@ double logScale(
   double minOutput = 1000,
   double maxOutput = 5000,
 }) {
+  return input;
   const maxInput = 10000; // Upper bound for input (clamp values beyond this)
 
   // Clamp input to [0, maxInput]
@@ -121,8 +122,12 @@ class BigModel with ChangeNotifier {
   }
 
   void goBackStaticPoints() {
-    staticPointsList.removeLast();
-    selectedSP.removeLast();
+    if (staticPointsList.isNotEmpty) {
+      staticPointsList.removeLast();
+    }
+    if (selectedSP.isNotEmpty) {
+      selectedSP.removeLast();
+    }
     setCurK(curK - 1);
     removeLastPoint();
 
@@ -203,10 +208,6 @@ class BigModel with ChangeNotifier {
           data['features'][0]['properties']['segments'][0]['duration'];
 
       durationInSeconds = logScale(durationInSeconds);
-
-      if (durationInSeconds >= timeCredit) {
-        durationInSeconds = timeCredit * curK / totalK;
-      }
 
       routes_duration.add(durationInSeconds);
       timeCredit -= durationInSeconds;
@@ -345,10 +346,6 @@ class BigModel with ChangeNotifier {
           data['features'][0]['properties']['segments'][0]['duration'];
 
       durationInSeconds = logScale(durationInSeconds);
-
-      if (durationInSeconds >= timeCredit) {
-        durationInSeconds = timeCredit * curK / totalK;
-      }
 
       routes_duration.add(durationInSeconds);
       timeCredit -= durationInSeconds;

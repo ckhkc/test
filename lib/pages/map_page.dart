@@ -408,7 +408,7 @@ class _PromptDialogState extends State<PromptDialog> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                labelText: 'Time Credit (aprx. 1000~5000 for each step)',
+                labelText: 'Time budget (mins)',
                 prefixIcon: Icon(Icons.timer, color: Colors.blueAccent),
                 filled: true,
                 fillColor: Colors.grey[100],
@@ -480,6 +480,7 @@ class _PromptDialogState extends State<PromptDialog> {
               });
               return;
             }
+            theta *= 60;
 
             int? steps = int.tryParse(_stepsController.text);
             if (steps == null || steps < 0) {
