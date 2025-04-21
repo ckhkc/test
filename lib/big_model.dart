@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:test/geo_point.dart';
 
 class BigModel with ChangeNotifier {
@@ -14,16 +18,10 @@ class BigModel with ChangeNotifier {
 
   List<Map<String, String>> get favorites => _favorites;
 
-  // List<List<Map<String, dynamic>>> staticPointsList = [];
+  List<List<Map<String, dynamic>>> staticPointsList = [];
 
-  List<List<Map<String, dynamic>>> staticPointsList = [
-    [
-      {'latitude': 22.277559019404148, 'longitude': 114.17313411995005},
-      {'latitude': 22.28024358896722, 'longitude': 114.18497713092883},
-      {'latitude': 22.28251328662275, 'longitude': 114.19185048857794},
-      {'latitude': 22.28790, 'longitude': 114.19361},
-    ],
-  ];
+  List<LatLng> pointsList = [];
+  List<List<LatLng>> routes = [];
 
   List<Map<String, dynamic>> restaurants = [];
   bool restaurantPageVisible = false;
@@ -101,5 +99,49 @@ class BigModel with ChangeNotifier {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Selected: ${restaurant['Name']}')));
+  }
+
+  Future<void> addPoint(LatLng newPoint) async {
+    if (pointsList.isEmpty) {
+      pointsList.add(newPoint);
+    } else {
+      final start = pointsList.last;
+      final end = newPoint;
+
+      const apiKey =
+          '5b3ce3597851110001cf6248724e0cc50fa3463a9c41b1707976aae3'; // Replace with your API key
+      const url =
+          'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Authorization': apiKey, 'Content-Type': 'application/json'},
+        body: json.encode({
+          'coordinates': [
+            [start.longitude, start.latitude],
+            [end.longitude, end.latitude],
+          ],
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        final coordinates = data['features'][0]['geometry']['coordinates'];
+
+        final routePoints =
+            coordinates
+                .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+                .toList();
+        routes.add(routePoints);
+      }
+
+      pointsList.add(newPoint);
+    }
+    notifyListeners();
+  }
+
+  void clearPoint() {
+    pointsList.clear();
+    routes.clear();
   }
 }

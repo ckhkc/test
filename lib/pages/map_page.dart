@@ -20,9 +20,6 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  List<List<LatLng>> routes = [];
-  // late BigModel _bigModel;
-  final BigModel model = BigModel();
   final MapController _mapController = MapController();
   final GeoPoint point = GeoPoint(latitude: 0, longitude: 0);
 
@@ -31,72 +28,9 @@ class _MapPageState extends State<MapPage> {
     super.initState();
   }
 
-  List<LatLng> getAllPoints() {
-    List<LatLng> points = [];
-    for (var pointList in model.staticPointsList) {
-      for (var point in pointList) {
-        final latitude = point['latitude'] as double;
-        final longitude = point['longitude'] + 0.001 as double;
-        points.add(LatLng(latitude, longitude));
-      }
-    }
-    return points;
-  }
-
-  Future<void> fetchRoutes() async {
-    const apiKey =
-        '5b3ce3597851110001cf6248724e0cc50fa3463a9c41b1707976aae3'; // Replace with your API key
-    const url =
-        'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
-
-    final points = getAllPoints();
-    if (points.length < 2) return; // Need at least 2 points for a route
-
-    List<List<LatLng>> tempRoutes = [];
-
-    // Fetch routes between consecutive points
-    for (int i = 0; i < points.length - 1; i++) {
-      final start = points[i];
-      final end = points[i + 1];
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Authorization': apiKey, 'Content-Type': 'application/json'},
-        body: json.encode({
-          'coordinates': [
-            [start.longitude, start.latitude],
-            [end.longitude, end.latitude],
-          ],
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final coordinates = data['features'][0]['geometry']['coordinates'];
-        final routePoints =
-            coordinates
-                .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
-                .toList();
-        tempRoutes.add(routePoints);
-      } else {
-        throw Exception('Failed to load route from ${start} to ${end}');
-      }
-    }
-
-    setState(() {
-      routes = tempRoutes;
-    });
-    // if (points.isNotEmpty) {
-    //   _mapController.move(points[0], 14.0);
-    // }
-  }
-
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
-    final points = getAllPoints();
-    // final model = Provider.of<BigModel>(context);
-    fetchRoutes();
     return model.restaurantPageVisible
         ? RestaurantListPage()
         : Scaffold(
@@ -150,7 +84,7 @@ class _MapPageState extends State<MapPage> {
                   ),
                   MarkerLayer(
                     markers:
-                        points.asMap().entries.map((entry) {
+                        model.pointsList.asMap().entries.map((entry) {
                           final index = entry.key;
                           final point = entry.value;
                           return Marker(
@@ -165,7 +99,7 @@ class _MapPageState extends State<MapPage> {
                                   index == 0
                                       ? Colors
                                           .green // Start point
-                                      : index == points.length - 1
+                                      : index == model.pointsList.length - 1
                                       ? Colors
                                           .red // End point
                                       : Colors.blue, // Intermediate points
@@ -175,7 +109,7 @@ class _MapPageState extends State<MapPage> {
                   ),
                   PolylineLayer(
                     polylines:
-                        routes
+                        model.routes
                             .map(
                               (route) => Polyline(
                                 // points: LatLng(route as double),
@@ -624,49 +558,6 @@ class _PromptDialogState extends State<PromptDialog> {
                 model.addStaticPoints(reachablePoints);
 
                 model.showRouteDialog();
-
-                // showDialog(
-                //   context: context,
-                //   builder:
-                //       (context) => AlertDialog(
-                //         title: Text('Reachable Locations'),
-                //         content: SingleChildScrollView(
-                //           child: Column(
-                //             crossAxisAlignment: CrossAxisAlignment.start,
-                //             children: [
-                //               Text(
-                //                 'From ${results['current_location']} to ${results['destination']}',
-                //               ),
-                //               Text(
-                //                 'Within ${results['theta']} minutes and ${results['k']} steps:',
-                //               ),
-                //               SizedBox(height: 16),
-                //               if (results['reachable_sp'] != null &&
-                //                   results['reachable_sp'].isNotEmpty)
-                //                 ...results['reachable_sp']
-                //                     .map(
-                //                       (loc) => ListTile(
-                //                         title: Text(loc['location']),
-                //                         subtitle: Text(
-                //                           'Time required: ${loc['time_required']}',
-                //                         ),
-                //                       ),
-                //                     )
-                //                     .toList(),
-                //               if (results['reachable_sp'] == null ||
-                //                   results['reachable_sp'].isEmpty)
-                //                 Text('No reachable locations found'),
-                //             ],
-                //           ),
-                //         ),
-                //         actions: [
-                //           TextButton(
-                //             onPressed: () => Navigator.of(context).pop(),
-                //             child: Text('OK'),
-                //           ),
-                //         ],
-                //       ),
-                // );
               } else {
                 showDialog(
                   context: context,
