@@ -87,6 +87,28 @@ class _MapPageState extends State<MapPage> {
                       return Stack(
                         children: [
                           MarkerLayer(
+                            markers: [
+                              if (model.startLatLng != null)
+                                Marker(
+                                  point: model.startLatLng!,
+                                  width: 30,
+                                  height: 30,
+                                  child: Image.asset(
+                                    "assets/orange_map_pin.png",
+                                  ),
+                                ),
+                              if (model.endLatLng != null)
+                                Marker(
+                                  point: model.endLatLng!,
+                                  width: 30,
+                                  height: 30,
+                                  child: Image.asset(
+                                    "assets/flat_design_map_pin.png",
+                                  ),
+                                ),
+                            ],
+                          ),
+                          MarkerLayer(
                             markers:
                                 model.pointsList.asMap().entries.map((entry) {
                                   final index = entry.key;
@@ -99,20 +121,9 @@ class _MapPageState extends State<MapPage> {
                                     child: Center(
                                       child: Builder(
                                         builder: (context) {
-                                          if (index == 0) {
-                                            return Image.asset(
-                                              "assets/orange_map_pin.png",
-                                            );
-                                          } else if (index ==
-                                              model.pointsList.length - 1) {
-                                            return Image.asset(
-                                              "assets/flat_design_map_pin.png",
-                                            );
-                                          } else {
-                                            return Image.asset(
-                                              "assets/black_map_pin.png",
-                                            );
-                                          }
+                                          return Image.asset(
+                                            "assets/black_map_pin.png",
+                                          );
                                         },
                                       ),
                                     ),
@@ -518,7 +529,7 @@ class _PromptDialogState extends State<PromptDialog> {
               final requestData = {
                 'current_location': _departureController.text,
                 'destination': _destinationController.text,
-                'k': steps,
+                'k': steps + 1,
                 'theta': theta,
               };
 
@@ -566,6 +577,18 @@ class _PromptDialogState extends State<PromptDialog> {
                           },
                         )
                         .toList();
+
+                final startCor = decodedJson['start_lat_lon'].split(',');
+                model.startLatLng = LatLng(
+                  double.parse(startCor[0]),
+                  double.parse(startCor[1]),
+                );
+
+                final endCor = decodedJson['end_lat_lon'].split(',');
+                model.endLatLng = LatLng(
+                  double.parse(endCor[0]),
+                  double.parse(endCor[1]),
+                );
 
                 model.start = _departureController.text;
                 model.end = _destinationController.text;

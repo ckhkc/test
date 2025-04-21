@@ -146,8 +146,17 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                           ? const Center(child: Text("No items available"))
                           : model.curK > model.totalK
                           ? Center(
-                            child: Text(
-                              "The Travel is planned, please enjoy it!.",
+                            child: Column(
+                              children: [
+                                Text(
+                                  "The Travel is planned, please enjoy it!.",
+                                ),
+                                SizedBox(height: 18),
+                                ElevatedButton(
+                                  onPressed: () => model.onAccept(),
+                                  child: Text("Accept"),
+                                ),
+                              ],
                             ),
                           )
                           : ListView.builder(

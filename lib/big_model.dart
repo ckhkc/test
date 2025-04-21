@@ -63,6 +63,9 @@ class BigModel with ChangeNotifier {
   String start = '';
   String end = '';
 
+  LatLng? startLatLng;
+  LatLng? endLatLng;
+
   void setTimeCredit(double newTimeCredit) {
     timeCredit = newTimeCredit;
     notifyListeners();
@@ -123,6 +126,7 @@ class BigModel with ChangeNotifier {
 
     if (staticPointsList.isEmpty) {
       hideRouteDialog();
+      clearPoint();
     }
     notifyListeners();
   }
@@ -228,7 +232,7 @@ class BigModel with ChangeNotifier {
       final requestData = {
         'current_location': selectedSP.last,
         'destination': end,
-        'k': totalK - curK + 1,
+        'k': totalK - curK + 2,
         'theta': timeCredit,
       };
 
@@ -290,6 +294,9 @@ class BigModel with ChangeNotifier {
   }
 
   void clearPoint() {
+    startLatLng = null;
+    endLatLng = null;
+
     staticPointsList.clear();
     selectedSP.clear();
 
@@ -297,5 +304,9 @@ class BigModel with ChangeNotifier {
     routes.clear();
     routes_duration.clear();
     notifyListeners();
+  }
+
+  void onAccept() {
+    hideRouteDialog();
   }
 }
