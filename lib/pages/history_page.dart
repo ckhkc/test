@@ -30,6 +30,7 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
+    model.toAcceptedHistory(model.acceptHistory[0]);
     return Scaffold(
       appBar: AppBar(
         title: Text('Route History'),
@@ -37,7 +38,7 @@ class HistoryPage extends StatelessWidget {
         elevation: 0,
       ),
       body:
-          model.acceptHistory.isEmpty
+          model.acceptedHistory.isEmpty
               ? Center(
                 child: Text(
                   'No route history yet!',
@@ -50,9 +51,9 @@ class HistoryPage extends StatelessWidget {
               )
               : ListView.builder(
                 padding: EdgeInsets.all(16),
-                itemCount: model.acceptHistory.length,
+                itemCount: model.acceptedHistory.length,
                 itemBuilder: (context, index) {
-                  final route = model.acceptHistory[index];
+                  final route = model.acceptedHistory[index];
                   return HistoryRouteCard(route: route, index: index);
                 },
               ),
@@ -101,6 +102,7 @@ class _HistoryRouteCardState extends State<HistoryRouteCard> {
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
+    model.toAcceptedHistory(model.acceptHistory[0]);
     return Padding(
       padding: EdgeInsets.only(bottom: 16),
       child: Row(
@@ -173,7 +175,8 @@ class _HistoryRouteCardState extends State<HistoryRouteCard> {
                         ],
                       ),
                       SizedBox(height: 8),
-                      Text('details: ${model.acceptHistory}'),
+                      Text('details: ${model.acceptedHistory}'),
+
                       // Text(
                       //   'To: ${widget.route['destination']}',
                       //   style: TextStyle(fontSize: 14, color: Colors.black87),
@@ -182,10 +185,10 @@ class _HistoryRouteCardState extends State<HistoryRouteCard> {
                       //   'Date: ${widget.route['date']}',
                       //   style: TextStyle(fontSize: 14, color: Colors.black87),
                       // ),
-                      Text(
-                        'Duration: ${widget.route['duration']}',
-                        style: TextStyle(fontSize: 14, color: Colors.black87),
-                      ),
+                      // Text(
+                      //   'Duration: ${widget.route['duration']}',
+                      //   style: TextStyle(fontSize: 14, color: Colors.black87),
+                      // ),
                     ],
                   ),
                 ),

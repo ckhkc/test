@@ -157,7 +157,6 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                                       () => {
                                         model.onAccept(),
                                         model.saveToHistory(),
-                                        print(model.acceptHistory),
                                       },
                                   child: Text("Accept"),
                                 ),

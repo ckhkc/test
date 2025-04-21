@@ -60,6 +60,8 @@ class BigModel with ChangeNotifier {
 
   dynamic acceptHistory = [];
 
+  Map<String, String> acceptedHistory = {};
+
   double timeCredit = 0;
   int totalK = 0;
   int curK = 0;
@@ -378,8 +380,22 @@ class BigModel with ChangeNotifier {
     }).toList();
   }
 
+  Map<String, String> toAcceptedHistory(List<dynamic> inputList) {
+    if (inputList.isEmpty) {
+      return {};
+    }
+    if (inputList.length < 3) {
+      throw Exception('Input list must have at least 3 elements');
+    }
+    return {
+      'name': "${inputList[0]} to ${inputList[2]}".toString() ?? '',
+      'staging': inputList[1][0]?.toString() ?? '',
+      'ending': inputList[2]?.toString() ?? '',
+    };
+  }
+
   void saveToHistory() {
-    List info = extractData(selectedRestaurant);
+    String info = extractData(selectedRestaurant) as String;
     dynamic list = [start, info, end];
     acceptHistory.add(list);
   }

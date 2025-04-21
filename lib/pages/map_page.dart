@@ -654,7 +654,6 @@ class _PromptDialogState extends State<PromptDialog> {
                     ),
               );
             }
-            print("sslf");
           },
 
           style: ElevatedButton.styleFrom(
