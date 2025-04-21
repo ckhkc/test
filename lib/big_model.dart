@@ -7,6 +7,32 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:test/geo_point.dart';
 
+import 'dart:math';
+
+/// Log-scales an input value to a specified output range, clamping inputs >10000.
+///
+/// - `input`: Raw input value (0 to infinity, but clamped at 10000).
+/// - `minOutput`: Minimum value of the output range (e.g., 1000).
+/// - `maxOutput`: Maximum value of the output range (e.g., 3000).
+double logScale(
+  double input, {
+  double minOutput = 1000,
+  double maxOutput = 5000,
+}) {
+  const maxInput = 10000; // Upper bound for input (clamp values beyond this)
+
+  // Clamp input to [0, maxInput]
+  final clampedInput = input.clamp(0, maxInput).toDouble();
+
+  // Avoid log(0) by adding 1 (log1p is log(x+1))
+  final logInput = log(clampedInput + 1);
+  final logMax = log(maxInput + 1);
+
+  // Normalize to [0, 1] and scale to [minOutput, maxOutput]
+  final normalized = logInput / logMax;
+  return minOutput + normalized * (maxOutput - minOutput);
+}
+
 class BigModel with ChangeNotifier {
   GeoPoint _point = GeoPoint(latitude: 40.7128, longitude: -74.0060);
 
@@ -164,8 +190,11 @@ class BigModel with ChangeNotifier {
 
         final coordinates = data['features'][0]['geometry']['coordinates'];
 
-        final double durationInSeconds =
+        double durationInSeconds =
             data['features'][0]['properties']['segments'][0]['duration'];
+
+        durationInSeconds = logScale(durationInSeconds);
+
         routes_duration.add(durationInSeconds);
         timeCredit -= durationInSeconds;
 
@@ -175,8 +204,14 @@ class BigModel with ChangeNotifier {
                 .toList();
         routes.add(routePoints);
 
-        // add new static points list
-        await sendNewStaticPointsRequest();
+        print(curK);
+        print(totalK);
+        if (curK == totalK) {
+          notifyListeners();
+        } else {
+          // add new static points list
+          await sendNewStaticPointsRequest();
+        }
       }
 
       pointsList.add(newPoint);

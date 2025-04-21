@@ -118,9 +118,19 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                         // <- Wrapped in Expanded
                         child: Consumer<BigModel>(
                           builder:
-                              (context, model, child) => Text(
-                                'The ${model.curK}-th steps, with ${model.timeCredit} time credit.',
-                              ),
+                              (context, model, child) =>
+                                  model.curK == model.totalK
+                                      ? Text(
+                                        // Show this if curK == totalK
+                                        'Completed all ${model.totalK} steps! Time credit left: ${model.timeCredit}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ), // Optional styling
+                                      )
+                                      : Text(
+                                        // Default text
+                                        'The ${model.curK}-th step, with ${model.timeCredit} time credit.',
+                                      ),
                         ),
                       ),
                       IconButton(
@@ -135,6 +145,12 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                   child:
                       model.staticPointsList.isEmpty
                           ? const Center(child: Text("No items available"))
+                          : model.curK == model.totalK
+                          ? Center(
+                            child: Text(
+                              "The Travel is planned, please enjoy it!.",
+                            ),
+                          )
                           : ListView.builder(
                             itemCount: model.staticPointsList.last.length,
                             itemBuilder: (context, index) {
