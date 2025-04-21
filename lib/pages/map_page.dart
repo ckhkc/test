@@ -58,9 +58,12 @@ class _MapPageState extends State<MapPage> {
               ),
               TextButton(
                 onPressed: () {
-                  print('Text button pressed');
+                  model.clearPoint();
                 },
-                child: Text('Action', style: TextStyle(color: Colors.white)),
+                child: Text(
+                  'Clear Route',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -74,51 +77,63 @@ class _MapPageState extends State<MapPage> {
                 ),
                 children: [
                   TileLayer(
-                    // urlTemplate: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png', // for transportation tile
                     urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // for normal tile
-                    // urlTemplate: 'https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png', // for cycle tile
-                    // urlTemplate: 'https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', // for public transportation tile
-                    userAgentPackageName:
-                        'com.example.app', // Required for OSM usage policy
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.app',
                   ),
-                  MarkerLayer(
-                    markers:
-                        model.pointsList.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final point = entry.value;
-                          return Marker(
-                            point: point,
-                            width: 60,
-                            height: 60,
-                            alignment: Alignment.centerLeft,
-                            child: Icon(
-                              Icons.location_pin,
-                              size: 30,
-                              color:
-                                  index == 0
-                                      ? Colors
-                                          .green // Start point
-                                      : index == model.pointsList.length - 1
-                                      ? Colors
-                                          .red // End point
-                                      : Colors.blue, // Intermediate points
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  PolylineLayer(
-                    polylines:
-                        model.routes
-                            .map(
-                              (route) => Polyline(
-                                // points: LatLng(route as double),
-                                points: route,
-                                strokeWidth: 4.0,
-                                color: Colors.blue,
-                              ),
-                            )
-                            .toList(),
+                  // Only rebuild MarkerLayer and PolylineLayer when model changes
+                  Consumer<BigModel>(
+                    builder: (context, model, child) {
+                      return Stack(
+                        children: [
+                          MarkerLayer(
+                            markers:
+                                model.pointsList.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final point = entry.value;
+                                  return Marker(
+                                    point: point,
+                                    width: 30,
+                                    height: 30,
+                                    alignment: Alignment.topCenter,
+                                    child: Center(
+                                      child: Builder(
+                                        builder: (context) {
+                                          if (index == 0) {
+                                            return Image.asset(
+                                              "assets/orange_map_pin.png",
+                                            );
+                                          } else if (index ==
+                                              model.pointsList.length - 1) {
+                                            return Image.asset(
+                                              "assets/flat_design_map_pin.png",
+                                            );
+                                          } else {
+                                            return Image.asset(
+                                              "assets/black_map_pin.png",
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                          PolylineLayer(
+                            polylines:
+                                model.routes
+                                    .map(
+                                      (route) => Polyline(
+                                        points: route,
+                                        strokeWidth: 4.0,
+                                        color: Colors.blue,
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   Positioned(
                     left: 0,
@@ -126,14 +141,9 @@ class _MapPageState extends State<MapPage> {
                     bottom: 16,
                     child: Center(
                       child: SizedBox(
-                        width:
-                            MediaQuery.of(context).size.width *
-                            0.8, // 80% of screen width
+                        width: MediaQuery.of(context).size.width * 0.8,
                         child: ElevatedButton(
                           onPressed: () {
-                            // ScaffoldMessenger.of(context).showSnackBar(
-                            //   SnackBar(content: Text('Get Started pressed!')),
-                            // );
                             model.hideRouteDialog();
                             showDialog(
                               context: context,

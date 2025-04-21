@@ -92,13 +92,26 @@ class BigModel with ChangeNotifier {
     Map<String, dynamic> restaurant,
   ) {
     selectedRestaurant = restaurant;
-    restaurantPageVisible = true; // Keep restaurant page visible
+    restaurantPageVisible = false; // Keep restaurant page visible
     notifyListeners();
 
-    // Optional: Show feedback
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Selected: ${restaurant['Name']}')));
+    final coordinates = restaurant['coordinates']; // "22.300688,114.167687"
+    final parts = coordinates.split(
+      ',',
+    ); // Split into ["22.300688", "114.167687"]
+    final point = LatLng(
+      double.parse(parts[0]), // latitude (22.300688)
+      double.parse(parts[1]), // longitude (114.167687)
+    );
+    print(point);
+    print(coordinates);
+    addPoint(point);
+    notifyListeners();
+
+    // // Optional: Show feedback
+    // ScaffoldMessenger.of(
+    //   context,
+    // ).showSnackBar(SnackBar(content: Text('Selected: ${restaurant['Name']}')));
   }
 
   Future<void> addPoint(LatLng newPoint) async {
@@ -137,11 +150,14 @@ class BigModel with ChangeNotifier {
 
       pointsList.add(newPoint);
     }
+    print(pointsList);
+    print(routes);
     notifyListeners();
   }
 
   void clearPoint() {
     pointsList.clear();
     routes.clear();
+    notifyListeners();
   }
 }
