@@ -460,7 +460,7 @@ class _PromptDialogState extends State<PromptDialog> {
               return;
             }
 
-            int? theta = int.tryParse(_thetaController.text);
+            double? theta = double.tryParse(_thetaController.text);
             if (theta == null || theta <= 0) {
               setState(() {
                 isProblemInput = true;
@@ -565,6 +565,12 @@ class _PromptDialogState extends State<PromptDialog> {
                           },
                         )
                         .toList();
+
+                model.start = _departureController.text;
+                model.end = _destinationController.text;
+                model.setCurK(0);
+                model.setTotalK(steps);
+                model.setTimeCredit(theta);
                 model.addStaticPoints(reachablePoints);
 
                 model.showRouteDialog();

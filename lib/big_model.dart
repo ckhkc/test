@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,6 +21,7 @@ class BigModel with ChangeNotifier {
   List<Map<String, String>> get favorites => _favorites;
 
   List<List<Map<String, dynamic>>> staticPointsList = [];
+  List<String> selectedSP = [];
 
   List<LatLng> pointsList = [];
   List<List<LatLng>> routes = [];
@@ -28,6 +30,27 @@ class BigModel with ChangeNotifier {
   List<Map<String, dynamic>> restaurants = [];
   bool restaurantPageVisible = false;
   Map<String, dynamic>? selectedRestaurant;
+
+  double timeCredit = 0;
+  int totalK = 0;
+  int curK = 0;
+  String start = '';
+  String end = '';
+
+  void setTimeCredit(double newTimeCredit) {
+    timeCredit = newTimeCredit;
+    notifyListeners();
+  }
+
+  void setTotalK(int newTotalK) {
+    totalK = newTotalK;
+    notifyListeners();
+  }
+
+  void setCurK(int newCurK) {
+    curK = newCurK;
+    notifyListeners();
+  }
 
   void updatePoint(double latitude, double longitude) {
     _point = GeoPoint(latitude: latitude, longitude: longitude);
@@ -63,11 +86,16 @@ class BigModel with ChangeNotifier {
 
   void addStaticPoints(List<Map<String, dynamic>> newStaticPointsList) {
     staticPointsList.add(newStaticPointsList);
+    setCurK(curK + 1);
     notifyListeners();
   }
 
   void goBackStaticPoints() {
     staticPointsList.removeLast();
+    selectedSP.removeLast();
+    setCurK(curK - 1);
+    removeLastPoint();
+
     if (staticPointsList.isEmpty) {
       hideRouteDialog();
     }
@@ -139,6 +167,7 @@ class BigModel with ChangeNotifier {
         final double durationInSeconds =
             data['features'][0]['properties']['segments'][0]['duration'];
         routes_duration.add(durationInSeconds);
+        timeCredit -= durationInSeconds;
 
         final routePoints =
             coordinates
@@ -147,7 +176,7 @@ class BigModel with ChangeNotifier {
         routes.add(routePoints);
 
         // add new static points list
-        await sendNewStaticPointsRequest(durationInSeconds);
+        await sendNewStaticPointsRequest();
       }
 
       pointsList.add(newPoint);
@@ -155,7 +184,56 @@ class BigModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendNewStaticPointsRequest(double timeUsed) async {}
+  Future<void> sendNewStaticPointsRequest() async {
+    try {
+      // Prepare request data
+      final requestData = {
+        'current_location': selectedSP.last,
+        'destination': end,
+        'k': totalK - curK,
+        'theta': timeCredit,
+      };
+
+      // Create the HTTP request future
+      final requestFuture = http.post(
+        Uri.parse(
+          'http://localhost:5000/reachable_locations',
+        ), // Use 10.0.2.2 for Android emulator
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestData),
+      );
+
+      // Create timeout future
+      final timeoutFuture = Future.delayed(Duration(seconds: 3)).then((_) {
+        throw TimeoutException('Request timed out after 3 seconds');
+      });
+
+      // Race the request against timeout
+      final response = await Future.any([requestFuture, timeoutFuture]);
+
+      // Process successful response
+      if (response.statusCode == 200) {
+        final dynamic decodedJson = json.decode(response.body);
+        final List<dynamic> reachableSpList =
+            decodedJson['reachable_sp'] as List? ?? [];
+
+        // Convert each item to a strongly-typed Map<String, dynamic>
+        final List<Map<String, dynamic>> reachablePoints =
+            reachableSpList
+                .map(
+                  (item) => {
+                    'location': item['location'] as String, // Force String
+                    'time_required':
+                        (item['time_required'] as num).toInt(), // Force int
+                  },
+                )
+                .toList();
+        addStaticPoints(reachablePoints);
+      }
+    } catch (e) {
+      print('An error occured: ${e.toString()}');
+    }
+  }
 
   void removeLastPoint() {
     if (pointsList.isEmpty) {
@@ -166,6 +244,7 @@ class BigModel with ChangeNotifier {
         routes.removeLast();
       }
       if (routes_duration.isNotEmpty) {
+        setTimeCredit(timeCredit + routes_duration.last);
         routes_duration.removeLast();
       }
     }
@@ -173,6 +252,9 @@ class BigModel with ChangeNotifier {
   }
 
   void clearPoint() {
+    staticPointsList.clear();
+    selectedSP.clear();
+
     pointsList.clear();
     routes.clear();
     routes_duration.clear();

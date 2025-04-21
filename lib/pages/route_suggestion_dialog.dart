@@ -110,7 +110,6 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                         ), // <- New icon
                         onPressed: () {
                           model.goBackStaticPoints();
-                          model.removeLastPoint();
                         },
                       ),
 
@@ -120,7 +119,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
                         child: Consumer<BigModel>(
                           builder:
                               (context, model, child) => Text(
-                                'The ${model.staticPointsList.length}-th activity',
+                                'The ${model.curK}-th steps, with ${model.timeCredit} time credit.',
                               ),
                         ),
                       ),
@@ -214,6 +213,7 @@ class _RouteSuggestionDialogState extends State<RouteSuggestionDialog>
 
                                     // Process successful response
                                     if (response.statusCode == 200) {
+                                      model.selectedSP.add(district);
                                       final dynamic decodedJson = json.decode(
                                         response.body,
                                       );
