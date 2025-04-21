@@ -66,6 +66,8 @@ class BigModel with ChangeNotifier {
   LatLng? startLatLng;
   LatLng? endLatLng;
 
+  bool showAdditionalRoutes = false;
+
   void setTimeCredit(double newTimeCredit) {
     timeCredit = newTimeCredit;
     notifyListeners();
@@ -168,61 +170,63 @@ class BigModel with ChangeNotifier {
 
   Future<void> addPoint(LatLng newPoint) async {
     setCurK(curK + 1);
+    LatLng start, end;
     if (pointsList.isEmpty) {
-      pointsList.add(newPoint);
+      start = startLatLng!;
+      end = newPoint;
     } else {
-      final start = pointsList.last;
-      final end = newPoint;
+      start = pointsList.last;
+      end = newPoint;
+    }
 
-      const apiKey =
-          '5b3ce3597851110001cf6248724e0cc50fa3463a9c41b1707976aae3'; // Replace with your API key
-      const url =
-          'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
+    const apiKey =
+        '5b3ce3597851110001cf6248724e0cc50fa3463a9c41b1707976aae3'; // Replace with your API key
+    const url =
+        'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Authorization': apiKey, 'Content-Type': 'application/json'},
-        body: json.encode({
-          'coordinates': [
-            [start.longitude, start.latitude],
-            [end.longitude, end.latitude],
-          ],
-        }),
-      );
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Authorization': apiKey, 'Content-Type': 'application/json'},
+      body: json.encode({
+        'coordinates': [
+          [start.longitude, start.latitude],
+          [end.longitude, end.latitude],
+        ],
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
 
-        final coordinates = data['features'][0]['geometry']['coordinates'];
+      final coordinates = data['features'][0]['geometry']['coordinates'];
 
-        double durationInSeconds =
-            data['features'][0]['properties']['segments'][0]['duration'];
+      double durationInSeconds =
+          data['features'][0]['properties']['segments'][0]['duration'];
 
-        durationInSeconds = logScale(durationInSeconds);
+      durationInSeconds = logScale(durationInSeconds);
 
-        if (durationInSeconds >= timeCredit) {
-          durationInSeconds = timeCredit * curK / totalK;
-        }
-
-        routes_duration.add(durationInSeconds);
-        timeCredit -= durationInSeconds;
-
-        final routePoints =
-            coordinates
-                .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
-                .toList();
-        routes.add(routePoints);
-
-        if (curK > totalK) {
-          notifyListeners();
-        } else {
-          // add new static points list
-          // await sendNewStaticPointsRequest();
-          sendNewStaticPointsRequest();
-        }
+      if (durationInSeconds >= timeCredit) {
+        durationInSeconds = timeCredit * curK / totalK;
       }
 
-      pointsList.add(newPoint);
+      routes_duration.add(durationInSeconds);
+      timeCredit -= durationInSeconds;
+
+      final routePoints =
+          coordinates
+              .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+              .toList();
+      routes.add(routePoints);
+
+      if (curK > totalK) {
+        notifyListeners();
+      } else {
+        // add new static points list
+        // await sendNewStaticPointsRequest();
+        sendNewStaticPointsRequest();
+      }
     }
+
+    pointsList.add(newPoint);
     notifyListeners();
   }
 
@@ -296,6 +300,7 @@ class BigModel with ChangeNotifier {
   void clearPoint() {
     startLatLng = null;
     endLatLng = null;
+    showAdditionalRoutes = false;
 
     staticPointsList.clear();
     selectedSP.clear();
@@ -306,7 +311,53 @@ class BigModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void onAccept() {
+  Future<void> onAccept() async {
+    LatLng start, end;
+    start = pointsList.last;
+    end = endLatLng!;
+
+    const apiKey =
+        '5b3ce3597851110001cf6248724e0cc50fa3463a9c41b1707976aae3'; // Replace with your API key
+    const url =
+        'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Authorization': apiKey, 'Content-Type': 'application/json'},
+      body: json.encode({
+        'coordinates': [
+          [start.longitude, start.latitude],
+          [end.longitude, end.latitude],
+        ],
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      final coordinates = data['features'][0]['geometry']['coordinates'];
+
+      double durationInSeconds =
+          data['features'][0]['properties']['segments'][0]['duration'];
+
+      durationInSeconds = logScale(durationInSeconds);
+
+      if (durationInSeconds >= timeCredit) {
+        durationInSeconds = timeCredit * curK / totalK;
+      }
+
+      routes_duration.add(durationInSeconds);
+      timeCredit -= durationInSeconds;
+
+      final routePoints =
+          coordinates
+              .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+              .toList();
+      routes.add(routePoints);
+
+      notifyListeners();
+    }
+
+    showAdditionalRoutes = true;
     hideRouteDialog();
   }
 }

@@ -605,7 +605,7 @@ class _PromptDialogState extends State<PromptDialog> {
                       (context) => AlertDialog(
                         title: Text('Error'),
                         content: Text(
-                          'Server returned error: ${response.statusCode}',
+                          'Server returned error: ${response.statusCode} ${response.body}',
                         ),
                         actions: [
                           TextButton(
