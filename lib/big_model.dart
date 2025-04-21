@@ -55,7 +55,7 @@ class BigModel with ChangeNotifier {
 
   List<Map<String, dynamic>> restaurants = [];
   bool restaurantPageVisible = false;
-  Map<String, dynamic>? selectedRestaurant;
+  List<Map<String, dynamic>> selectedRestaurant = [];
 
   double timeCredit = 0;
   int totalK = 0;
@@ -152,7 +152,7 @@ class BigModel with ChangeNotifier {
     BuildContext context,
     Map<String, dynamic> restaurant,
   ) {
-    selectedRestaurant = restaurant;
+    selectedRestaurant.add(restaurant);
     restaurantPageVisible = false; // Keep restaurant page visible
     notifyListeners();
 
@@ -293,6 +293,9 @@ class BigModel with ChangeNotifier {
         setTimeCredit(timeCredit + routes_duration.last);
         routes_duration.removeLast();
       }
+      if (selectedRestaurant.isNotEmpty) {
+        selectedRestaurant.removeLast();
+      }
     }
     notifyListeners();
   }
@@ -308,6 +311,8 @@ class BigModel with ChangeNotifier {
     pointsList.clear();
     routes.clear();
     routes_duration.clear();
+
+    selectedRestaurant.clear();
     notifyListeners();
   }
 
@@ -359,5 +364,6 @@ class BigModel with ChangeNotifier {
 
     showAdditionalRoutes = true;
     hideRouteDialog();
+    notifyListeners();
   }
 }
