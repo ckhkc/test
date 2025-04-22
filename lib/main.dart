@@ -91,7 +91,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     final model = Provider.of<BigModel>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Top Navigation App'),
+        title: const Text('Smart Itinerary Planner'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
