@@ -60,7 +60,7 @@ class BigModel with ChangeNotifier {
 
   dynamic acceptHistory = [];
 
-  Map<String, String> acceptedHistory = {};
+  List<Map<String, String>> acceptedHistory = [{}];
 
   double timeCredit = 0;
   int totalK = 0;
@@ -366,7 +366,9 @@ class BigModel with ChangeNotifier {
 
     showAdditionalRoutes = true;
     hideRouteDialog();
-
+    print((acceptHistory)[0].length);
+    print((acceptHistory)[0]);
+    print(toAcceptedHistory(acceptHistory[0]));
     notifyListeners();
   }
 
@@ -380,22 +382,34 @@ class BigModel with ChangeNotifier {
     }).toList();
   }
 
-  Map<String, String> toAcceptedHistory(List<dynamic> inputList) {
+  // Map<String, String> toAcceptedHistory(List<dynamic> inputList) {
+  //   if (inputList.isEmpty) {
+  //     return {};
+  //   }
+  //   if (inputList.length < 3) {
+  //     throw Exception('Input list must have at least 3 elements');
+  //   }
+  //   return {
+  //     'name': "${inputList[0]} to ${inputList[2]}".toString() ?? '',
+  //     'staging': inputList[1][0]?.toString() ?? '',
+  //     'ending': inputList[2]?.toString() ?? '',
+  //   };
+  // }
+  List<Map<String, String>> toAcceptedHistory(dynamic inputList) {
     if (inputList.isEmpty) {
-      return {};
+      return [{}];
     }
-    if (inputList.length < 3) {
-      throw Exception('Input list must have at least 3 elements');
-    }
-    return {
-      'name': "${inputList[0]} to ${inputList[2]}".toString() ?? '',
-      'staging': inputList[1][0]?.toString() ?? '',
-      'ending': inputList[2]?.toString() ?? '',
-    };
+    return [
+      {
+        'name': inputList[0].toString(),
+        'staging': inputList[1].join(', '),
+        'ending': inputList[2].toString(),
+      },
+    ];
   }
 
   void saveToHistory() {
-    String info = extractData(selectedRestaurant) as String;
+    List<List<String>> info = extractData(selectedRestaurant);
     dynamic list = [start, info, end];
     acceptHistory.add(list);
   }

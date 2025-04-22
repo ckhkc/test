@@ -6,31 +6,31 @@ class HistoryPage extends StatelessWidget {
   HistoryPage({super.key});
 
   // Mock data for route history
-  // List<Map<String, String>> routeHistory = [
-  //   {
-  //     'name': 'Office Trip',
-  //     'destination': 'City Center',
-  //     // 'duration': '25 min',
-  //     // 'date': '2025-04-18',
-  //   },
-  //   {
-  //     'name': 'Grocery Run',
-  //     'destination': 'Mall',
-  //     // 'duration': '15 min',
-  //     // 'date': '2025-04-17',
-  //   },
-  //   {
-  //     'name': 'Evening Walk',
-  //     'destination': 'Park',
-  //     // 'duration': '40 min',
-  //     // 'date': '2025-04-16',
-  //   },
-  // ];
+  List<Map<String, String>> routeHistory = [
+    {
+      'name': 'Office Trip',
+      'destination': 'City Center',
+      'duration': '25 min',
+      'date': '2025-04-18',
+    },
+    {
+      'name': 'Grocery Run',
+      'destination': 'Mall',
+      'duration': '15 min',
+      'date': '2025-04-17',
+    },
+    {
+      'name': 'Evening Walk',
+      'destination': 'Park',
+      'duration': '40 min',
+      'date': '2025-04-16',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<BigModel>(context);
-    model.toAcceptedHistory(model.acceptHistory[0]);
+    model.acceptedHistory = model.toAcceptedHistory(model.acceptHistory[0]);
     return Scaffold(
       appBar: AppBar(
         title: Text('Route History'),
@@ -54,7 +54,11 @@ class HistoryPage extends StatelessWidget {
                 itemCount: model.acceptedHistory.length,
                 itemBuilder: (context, index) {
                   final route = model.acceptedHistory[index];
-                  return HistoryRouteCard(route: route, index: index);
+                  return HistoryRouteCard(
+                    // route: {'route': 'route'},
+                    route: route,
+                    index: index,
+                  );
                 },
               ),
     );
@@ -175,7 +179,19 @@ class _HistoryRouteCardState extends State<HistoryRouteCard> {
                         ],
                       ),
                       SizedBox(height: 8),
-                      Text('details: ${model.acceptedHistory}'),
+                      // Text('details: ${model.acceptedHistory.staging}'),
+                      Text(
+                        'staging: ${widget.route['staging']}',
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                      Text(
+                        'ending: ${widget.route['ending']}',
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                      Text(
+                        'duration: ${widget.route['ending']}', //tbd for time credit
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
 
                       // Text(
                       //   'To: ${widget.route['destination']}',
