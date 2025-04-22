@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     // App Logo/Title
                     Text(
-                      'Wanderlust Planner',
+                      'Smart Itinerary Planner',
                       style: Theme.of(context).textTheme.headlineSmall!
                           .copyWith(color: Colors.white, letterSpacing: 1.5),
                     ),

@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Wanderlust Itinerary Planner',
+      title: 'Smart Itinerary Planner',
       theme: ThemeData(
         primaryColor: Colors.teal,
         scaffoldBackgroundColor: Colors.white,
@@ -44,8 +44,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      // home: LoginPage(),
-      home: HomePage(),
+      home: LoginPage(),
+      // home: HomePage(),
     );
   }
 }
